@@ -6,7 +6,10 @@ Thie library provides Python bindings to the [IoT Analytics REST API](https://gi
 1. Clone the iotkit-lib-python repository from GitHub
 2. Install the library:
 
-   ``` bash
+``` bash
 cd iotkit-lib-python
 python setup.py install
 ```
+
+## Getting started
+See `samples/getting_started.py`
