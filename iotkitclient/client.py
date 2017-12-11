@@ -39,6 +39,18 @@ from account import Account
 class AuthenticationError(Exception):
     pass
 
+class OICException(Exception):
+
+    def __init__(self, expect, resp):
+        message = ("Exception during API call\n"
+                   "Status code: {}, {} was expected".format(resp.status_code,
+                                                             expect))
+        js = resp.json()
+        if js:
+            pretty = json.dumps(js, indent=4, separators=(',', ': '))
+            message += "\nError message: {}".format(pretty)
+        super(OICException, self).__init__(message)
+
 
 class ServerInfo(object):
     # TODO add str method
@@ -153,9 +165,8 @@ class Client(object):
         else:
             headers = self.get_headers()
         # authorize=False because it is done manually, as token object NA yet
-        resp = self._get("/auth/tokenInfo", headers=headers, authorize=False)
-
-        assert resp.status_code == 200, "Could not get Token" #TODO proper errors
+        resp = self._get("/auth/tokenInfo", headers=headers, authorize=False,
+                         expect=200)
         return Token.from_json(token_str, resp.json(), client=self)
 
 
@@ -183,21 +194,27 @@ class Client(object):
         A new token needs to be acquired using the auth method to access the
         account. """
         payload = {"name": name}
-        resp = self._post("/accounts", data=payload)
-        assert resp.status_code == 201, "Account creation failed" #TODO proper exceptions
+        resp = self._post("/accounts", data=payload, expect=201)
         js = resp.json()
         return Account(js["name"], js["id"], Account.ROLE_ADMIN, self)
 
 
-    def _make_request(self, request_func, endpoint, authorize, *args, **kwargs):
+    def _make_request(self, request_func, endpoint, authorize, expect=None,
+                      *args, **kwargs):
+        """ Make a request using global settings and raise an OICException
+        if a status code other than expect is returned """
+
         headers = kwargs.pop("headers", self.get_headers(authorize=authorize))
         proxies = kwargs.pop("proxies", self.proxies)
         verify = kwargs.pop("verify", self.verify_certs)
         if "data" in kwargs and type(kwargs.get("data")) is dict:
             kwargs["data"] = json.dumps(kwargs["data"])
         url = self.base_url + endpoint
-        return request_func(url, headers=headers, proxies=proxies,
+        resp = request_func(url, headers=headers, proxies=proxies,
                             verify=verify, *args, **kwargs)
+        if expect and resp.status_code != expect:
+            raise OICException(expect, resp)
+        return resp
 
     def _get(self, endpoint, authorize=True, *args, **kwargs):
         return self._make_request(requests.get, endpoint, authorize,

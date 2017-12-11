@@ -45,6 +45,7 @@ class Account(object): #TODO document attributes
         self.devices = None
         self.activation_code = None
         self.activation_code_valid_until = None
+        self.account_url = "/accounts/{}".format(self.account_id)
 
     def __str__(self):
         return "Account | name: {}\tid:{}\trole:{}".format(self.name,
@@ -54,8 +55,8 @@ class Account(object): #TODO document attributes
 
     def delete(self):
         """ Delete account"""
-        resp = self.client._delete("/accounts/{}".format(self.account_id))
-        assert resp.status_code == 204 #TODO inform client
+        resp = self.client._delete(self.account_url, expect=204)
+        #TODO inform client
 
 
     def get_activation_code(self, auto_refresh=True):
@@ -65,9 +66,8 @@ class Account(object): #TODO document attributes
         request a new activation code if the old one is expired.
         Otherwise it will return None
         """
-        endpoint = "/accounts/{}/activationcode".format(self.account_id)
-        resp = self.client._get(endpoint)
-        assert resp.status_code == 200, "Could not get activation code" #TODO proper exception
+        endpoint = self.account_url + "/activationcode"
+        resp = self.client._get(endpoint, expect=200)
         activation_code = resp.json()["activationCode"]
         time_left = resp.json()["timeLeft"]
         if not activation_code and auto_refresh:
@@ -78,27 +78,33 @@ class Account(object): #TODO document attributes
 
 
     def refresh_activation_code(self): #TODO document
-        endpoint = "/accounts/{}/activationcode/refresh".format(self.account_id)
-        resp = self.client._put(endpoint)
-        assert resp.status_code==200, "Error while refreshing activation code" #TODO proper exception
+        endpoint = self.account_url + "/activationcode/refresh"
+        resp = self.client._put(endpoint, expect=200)
         self.activation_code = resp.json()["activationCode"]
         return self.activation_code
 
 
-    def get_devices(self): # TODO Documentation
-        endpoint = "/accounts/{}/devices".format(self.account_id)
-        resp = self.client._get(endpoint)
-        assert resp.status_code == 200, "Could not retrieve devices" #TODO proper exception
-        devices = [] # TODO decide whether old devices should be kept
+    def get_devices(self, sort=None, order=None, limit=None, skip=None,
+                    device_id=None, gateway_id=None, name=None, status=None): # TODO Documentation
+
+        endpoint = self.account_url + "/devices"
+        endpoint += "&".join(["{}={}".format(param, locals()[param])
+                              for param in ["sort", "order", "limit", "skip",
+                                            "device_id", "gateway_id", "name",
+                                            "status"]
+                              if locals()[param] is not None])
+
+        resp = self.client._get(endpoint, expect=200)
+        self.devices = [] # TODO decide whether old devices should be kept
         for device_json in resp.json():
-            devices.append(Device(account=self,
-                                  device_id=device_json.get("deviceId"), #TODO from_json method
-                                  name=device_json.get("name"),
-                                  gateway_id=device_json.get("gatewayId"),
-                                  domain_id=device_json.get("domainId"),
-                                  created_on=device_json.get("created")))
-        self.devices = devices
-        return devices
+            self.devices.append(Device.from_json(self, device_json))
+        return self.devices
+
+
+    def get_device(self, device_id): #TODO doc
+        endpoint = self.account_url + "/devices/" + device_id
+        resp = self.client._get(endpoint, 200)
+        return Device.from_json(account, resp.json())
 
 
     def create_device(self, device_id, name, gateway_id=None, tags=[], loc=None,
@@ -113,7 +119,7 @@ class Account(object): #TODO document attributes
             payload["loc"] = loc
         if attributes:
             payload["attributes"] = attributes
-        resp = self.client._post(endpoint, data=payload)
+        resp = self.client._post(endpoint, data=payload, expect=201)
         assert resp.status_code == 201, "Device creation failed" #TODO proper exceptions
 
         return Device(account=self, device_id=resp.json().get("deviceId"), #TODO from_json method
