@@ -75,9 +75,9 @@ class UserToken(object):
                              "missing".format(exc.args[0]))
         accounts = []
         for account_dict in payload.get("accounts", []):
-            accounts.append(Account(account_dict["name"], account_dict["id"],
-                                    account_dict["role"], client))
-
+            accounts.append(Account(client, account_dict["name"],
+                                    account_dict["id"],
+                                    account_dict["role"]))
 
         return UserToken(value=token_str, jti=jti, issued_by=issued_by,
                          user_id=user_id, expires_by=expires_by,

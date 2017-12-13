@@ -31,8 +31,9 @@ import json
 
 import requests
 
-from oic_token import UserToken
 from account import Account
+from oic_token import UserToken
+from oic_user import User
 
 
 class AuthenticationError(Exception):
@@ -157,6 +158,41 @@ class Client(object):
         return UserToken.from_json(token_str, resp.json(), client=self)
 
 
+    def get_user(self, user_id=None):
+        """ Get the user with given user_id. If None specified, the token
+        holder will be returned."""
+        if not user_id:
+            user_id = self.user_token.user_id
+        resp = self.get("/users/" + user_id, expect=200)
+        return User.from_json(client=self, json_dict=resp.json())
+
+
+    def reset_password_request_mail(self, email):
+        """ Send a password reset mail to given email adress. """
+        self.post("/users/forgot_password", data={"email":email},
+                  authorize=False, expect=200)
+
+
+    def reset_password_submit_new(self, token, password):
+        """ Reset password using the token obtained via email. """
+        payload = {"token":token, "password":password}
+        self.put("/users/forgot_password", data=payload,
+                 authorize=False, expect=200)
+
+
+    def change_user_password(self, email, current_password, new_password):
+        """ Change password for user identified by email. """
+        url = "/users/{}/change_password".format(email)
+        payload = {"currentpwd":current_password, "password":new_password}
+        self.put(url, data=payload, authorize=False, expect=200)
+
+
+    def request_user_activation(self, email):
+        """ Send user with given email adress an activation mail."""
+        self.post("/users/request_user_activation", data={"email":email},
+                  authorize=False, expect=200)
+
+
     def get_server_info(self):
         """ Get cloud version and health information
 
@@ -180,8 +216,8 @@ class Client(object):
         payload = {"name": name}
         resp = self.post("/accounts", data=payload, expect=201)
         resp_json = resp.json()
-        return Account(resp_json["name"], resp_json["id"],
-                       Account.ROLE_ADMIN, self)
+        return Account(self, resp_json["name"], resp_json["id"],
+                       Account.ROLE_ADMIN)
 
 
     def _make_request(self, request_func, endpoint, authorize, expect=None,
