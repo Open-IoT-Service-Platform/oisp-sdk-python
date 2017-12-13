@@ -29,4 +29,4 @@ proxies = None
 
 # user account to use
 username = "ali.r.kocal@intel.com"
-password = "P@ssw0rd"
+password = "P@ssw0rd!"

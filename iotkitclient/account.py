@@ -37,11 +37,11 @@ class Account(object): #TODO document attributes
     ROLE_ADMIN = "admin"
     ROLE_USER = "user"
 
-    def __init__(self, name, account_id, role, client):
+    def __init__(self, client, name, account_id, role):
+        self.client = client
         self.name = name
         self.account_id = account_id
         self.role = role
-        self.client = client
         self.devices = None
         self.activation_code = None
         self.activation_code_valid_until = None
