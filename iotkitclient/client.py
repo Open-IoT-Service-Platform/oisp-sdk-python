@@ -27,47 +27,38 @@
 Methods for IoT Analytics Cloud connections
 
 """
-import dateutil.parser
 import json
 
 import requests
 
-from token import Token
+from oic_token import UserToken
 from account import Account
 
 
 class AuthenticationError(Exception):
+    """Authentication Error class for Open IOT Connector
+
+    This Error is thrown if an error occurs before
+    server is even contacted, otherwise an OIC Exception
+    will be thrown, even in the case of an authentication
+    related exception"""
     pass
 
+
 class OICException(Exception):
+    """Exception for Open IOT Connector, for cases when an
+    error code is returned from the server."""
 
     def __init__(self, expect, resp):
         message = ("Exception during API call\n"
                    "Status code: {}, {} was expected".format(resp.status_code,
                                                              expect))
-        js = resp.json()
-        if js:
-            pretty = json.dumps(js, indent=4, separators=(',', ': '))
+        resp_json = resp.json()
+        if resp_json:
+            pretty = json.dumps(resp_json, indent=4, separators=(',', ': '))
             message += "\nError message: {}".format(pretty)
         super(OICException, self).__init__(message)
 
-
-class ServerInfo(object):
-    # TODO add str method
-    def __init__(self, is_healthy, current_setting, name, build, date):
-        # TODO documentation
-        self.is_healthy = is_healthy
-        self.current_setting = current_setting
-        self.name = name
-        self.build = build
-        self.date = dateutil.parser.parse(date)
-
-    def __str__(self):
-        return ("Name {} \n"
-                "Health: {} \n"
-                "Setting: {}\tBuild: {}\n"
-                "Date: {}".format(self.name, self.is_healthy,
-                                  self.current_setting,self.build, self.date))
 
 
 class Client(object):
@@ -99,8 +90,6 @@ class Client(object):
         self.user_token = None
         self.user_id = None
         # Test connection
-        # TODO find documentation of health endpoint and see whether it
-        # can fail in a way requests does not throw an exception
         self.get_server_info()
 
 
@@ -119,7 +108,7 @@ class Client(object):
             raise AuthenticationError("You need to authenticate using "
                                       "the auth method first.")
         if self.user_token.is_expired():
-            raise AuthenticationError("Token expired, you need to use "
+            raise AuthenticationError("UserToken expired, you need to use "
                                       "the auth method again.")
         headers["Authorization"] = "Bearer " + self.user_token.value
         return headers
@@ -136,10 +125,8 @@ class Client(object):
         password (str): password for IoT Analytics site
         """
         payload = {"username": username, "password": password}
-        resp = self._post("/auth/token", data=payload, authorize=False)
-
-        if resp.status_code != 200:
-            raise AuthenticationException("Authentication with password failed")
+        resp = self.post("/auth/token", data=payload, authorize=False,
+                         expect=200)
 
         token_str = resp.json()["token"]
         self.user_token = self.get_user_token(token_str)
@@ -147,7 +134,7 @@ class Client(object):
 
 
     def get_user_token(self, token_str=None):
-        """ Return a Token object containing user token information.
+        """ Return a UserToken object containing user token information.
 
         Args:
         ----------
@@ -165,26 +152,23 @@ class Client(object):
         else:
             headers = self.get_headers()
         # authorize=False because it is done manually, as token object NA yet
-        resp = self._get("/auth/tokenInfo", headers=headers, authorize=False,
-                         expect=200)
-        return Token.from_json(token_str, resp.json(), client=self)
+        resp = self.get("/auth/tokenInfo", headers=headers, authorize=False,
+                        expect=200)
+        return UserToken.from_json(token_str, resp.json(), client=self)
 
 
-    def get_server_info(self): #TODO consider simply returning a json
+    def get_server_info(self):
         """ Get cloud version and health information
 
-        Returns: a ServerInfo object
+        Returns: a JSON dictionary
         """
-        resp = self._get("/health", authorize=False)
-        if resp.status_code != 200:
-            raise ConnectionError("Connection failed")
-        js = resp.json()
-        return ServerInfo(is_healthy=js["isHealthy"], #TODO write from_json method for ServerInfo
-                         current_setting=js["currentSetting"],
-                         name=js["name"], build=js["build"], date=js["date"])
+        resp = self.get("/health", authorize=False, expect=200)
+        return resp.json()
 
 
-    def get_accounts(self): #TODO docu #TODO consider returning copy
+    def get_accounts(self):
+        """ Get a list of accounts connected to current
+        authentication token. """
         return self.user_token.accounts
 
 
@@ -194,9 +178,10 @@ class Client(object):
         A new token needs to be acquired using the auth method to access the
         account. """
         payload = {"name": name}
-        resp = self._post("/accounts", data=payload, expect=201)
-        js = resp.json()
-        return Account(js["name"], js["id"], Account.ROLE_ADMIN, self)
+        resp = self.post("/accounts", data=payload, expect=201)
+        resp_json = resp.json()
+        return Account(resp_json["name"], resp_json["id"],
+                       Account.ROLE_ADMIN, self)
 
 
     def _make_request(self, request_func, endpoint, authorize, expect=None,
@@ -207,7 +192,7 @@ class Client(object):
         headers = kwargs.pop("headers", self.get_headers(authorize=authorize))
         proxies = kwargs.pop("proxies", self.proxies)
         verify = kwargs.pop("verify", self.verify_certs)
-        if "data" in kwargs and type(kwargs.get("data")) is dict:
+        if "data" in kwargs and isinstance(kwargs.get("data"), dict):
             kwargs["data"] = json.dumps(kwargs["data"])
         url = self.base_url + endpoint
         resp = request_func(url, headers=headers, proxies=proxies,
@@ -216,18 +201,46 @@ class Client(object):
             raise OICException(expect, resp)
         return resp
 
-    def _get(self, endpoint, authorize=True, *args, **kwargs):
+    def get(self, endpoint, authorize=True, *args, **kwargs):
+        """ Make a GET request.
+        Args:
+        ----------
+        endpoint: Endpoint without the API root.
+        authorize: Whether authorization token should be included.
+        Other arguments are passed to requests module.
+        """
         return self._make_request(requests.get, endpoint, authorize,
                                   *args, **kwargs)
 
-    def _post(self, endpoint, authorize=True, *args, **kwargs):
+    def post(self, endpoint, authorize=True, *args, **kwargs):
+        """ Make a POST request.
+        Args:
+        ----------
+        endpoint: Endpoint without the API root.
+        authorize: Whether authorization token should be included.
+        Other arguments are passed to requests module.
+        """
         return self._make_request(requests.post, endpoint, authorize,
                                   *args, **kwargs)
 
-    def _put(self, endpoint, authorize=True, *args, **kwargs):
+    def put(self, endpoint, authorize=True, *args, **kwargs):
+        """ Make a PUT request.
+        Args:
+        ----------
+        endpoint: Endpoint without the API root.
+        authorize: Whether authorization token should be included.
+        Other arguments are passed to requests module.
+        """
         return self._make_request(requests.put, endpoint, authorize,
                                   *args, **kwargs)
 
-    def _delete(self, endpoint, authorize=True, *args, **kwargs):
+    def delete(self, endpoint, authorize=True, *args, **kwargs):
+        """ Make a DELETE request.
+        Args:
+        ----------
+        endpoint: Endpoint without the API root.
+        authorize: Whether authorization token should be included.
+        Other arguments are passed to requests module.
+        """
         return self._make_request(requests.delete, endpoint, authorize,
                                   *args, **kwargs)

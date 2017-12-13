@@ -30,12 +30,12 @@ from device import Device
 
 
 class Account(object): #TODO document attributes
-
     """ Create IoT Account instance
 
     """
 
-    ROLE_ADMIN="admin"
+    ROLE_ADMIN = "admin"
+    ROLE_USER = "user"
 
     def __init__(self, name, account_id, role, client):
         self.name = name
@@ -55,7 +55,7 @@ class Account(object): #TODO document attributes
 
     def delete(self):
         """ Delete account"""
-        resp = self.client._delete(self.account_url, expect=204)
+        self.client.delete(self.account_url, expect=204)
         #TODO inform client
 
 
@@ -67,9 +67,9 @@ class Account(object): #TODO document attributes
         Otherwise it will return None
         """
         endpoint = self.account_url + "/activationcode"
-        resp = self.client._get(endpoint, expect=200)
+        resp = self.client.get(endpoint, expect=200)
         activation_code = resp.json()["activationCode"]
-        time_left = resp.json()["timeLeft"]
+        #time_left = resp.json()["timeLeft"]
         if not activation_code and auto_refresh:
             activation_code = self.refresh_activation_code()
         self.activation_code = activation_code
@@ -77,16 +77,34 @@ class Account(object): #TODO document attributes
         return activation_code
 
 
-    def refresh_activation_code(self): #TODO document
+    def refresh_activation_code(self):
+        """ Request a new activation code from server.
+
+        Returns the activation code as string."""
         endpoint = self.account_url + "/activationcode/refresh"
-        resp = self.client._put(endpoint, expect=200)
+        resp = self.client.put(endpoint, expect=200)
         self.activation_code = resp.json()["activationCode"]
         return self.activation_code
 
 
+    # pylint: disable=unused-argument, too-many-arguments
+    # Arguments are accessed via locals() and as many as API parameters are
+    # necessary
     def get_devices(self, sort=None, order=None, limit=None, skip=None,
-                    device_id=None, gateway_id=None, name=None, status=None): # TODO Documentation
+                    device_id=None, gateway_id=None, name=None, status=None):
+        """ Get a list of devices connected to the account.
 
+        Args
+        ----------
+        sort (str): sort result by this attributes (example: device_id, name)
+        order (str): "asc" for ascending, "desc" for descending order.
+        limit (int): Limit number of results to this number
+        skip (int): Skip this many elements at the beginning.
+        device_id (str): Filter by device id
+        gateway_id (str): Filter by gateway id
+        name (str): Filter by name
+        status (str): Filter by status
+        """
         endpoint = self.account_url + "/devices"
         endpoint += "&".join(["{}={}".format(param, locals()[param])
                               for param in ["sort", "order", "limit", "skip",
@@ -94,21 +112,25 @@ class Account(object): #TODO document attributes
                                             "status"]
                               if locals()[param] is not None])
 
-        resp = self.client._get(endpoint, expect=200)
+        resp = self.client.get(endpoint, expect=200)
         self.devices = [] # TODO decide whether old devices should be kept
         for device_json in resp.json():
             self.devices.append(Device.from_json(self, device_json))
         return self.devices
 
 
-    def get_device(self, device_id): #TODO doc
+    def get_device(self, device_id):
+        """ Get device with given id. """
         endpoint = self.account_url + "/devices/" + device_id
-        resp = self.client._get(endpoint, 200)
-        return Device.from_json(account, resp.json())
+        resp = self.client.get(endpoint, 200)
+        return Device.from_json(self, resp.json())
 
 
-    def create_device(self, device_id, name, gateway_id=None, tags=[], loc=None,
-                      attributes=None): #TODO Documentation
+    def create_device(self, device_id, name, gateway_id=None, tags=None,
+                      loc=None, attributes=None):
+        """ Create a device
+
+        Device ID has to be unique. """
         endpoint = "/accounts/{}/devices".format(self.account_id)
         if gateway_id is None:
             gateway_id = device_id
@@ -119,16 +141,27 @@ class Account(object): #TODO document attributes
             payload["loc"] = loc
         if attributes:
             payload["attributes"] = attributes
-        resp = self.client._post(endpoint, data=payload, expect=201)
-        assert resp.status_code == 201, "Device creation failed" #TODO proper exceptions
+        resp = self.client.post(endpoint, data=payload, expect=201)
 
-        return Device(account=self, device_id=resp.json().get("deviceId"), #TODO from_json method
-                      name=resp.json().get("name"),
-                      gateway_id=resp.json().get("gatewayId"),
-                      domain_id=resp.json().get("domainId"),
-                      created_on=resp.json().get("created"))
+        return Device.from_json(self, resp.json())
+
+
+    def get_device_tags(self):
+        """ Return a list of all device tags. """
+        endpoint = self.account_url + "/devices/tags"
+        resp = self.client.get(endpoint, expect=200)
+        return resp.json()
+
+
+    def get_device_attributes(self):
+        """ Return a dictionary of all device attributes
+
+        Each entry contains a list for all values for an attribute"""
+        endpoint = self.account_url + "/devices/attributes"
+        resp = self.client.get(endpoint, expect=200)
+        return resp.json()
 
 
     def get_component_types(self): #TODO OOP
         endpoint = "/accounts/{}/cmpcatalog?full=true".format(self.account_id)
-        return self.client._get(endpoint)
+        return self.client.get(endpoint)
