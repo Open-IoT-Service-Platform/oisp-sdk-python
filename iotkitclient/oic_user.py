@@ -24,21 +24,25 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """User management module."""
 
 from account import Account
 
+
 # pylint: disable=too-many-instance-attributes
 # The attributes match those defined in the REST API
 class User(object):
-    """Class for getting user information, password management and user
-    activation."""
+    """Manages user information, passwords and activation."""
 
     # pylint: disable=too-many-arguments
     # Arguments match data provided by REST API
     def __init__(self, client, user_id, email=None, accounts=None,
                  attributes=None, tc_accepted=None, is_verified=None):
+        """Create an User object.
+
+        This method does not create a new user on host side.
+
+        """
         self.client = client
         self.user_id = user_id
         self.email = email
@@ -81,6 +85,5 @@ class User(object):
         self.attributes = attributes
 
     def delete(self):
-        """Delete users and connected accounts which do not have any other
-        administrators."""
+        """Delete user and connected accounts without other administrators."""
         self.client.delete(self.url)

@@ -24,10 +24,8 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""Methods for IoT Analytics Cloud connections."""
 
-"""
-Methods for IoT Analytics Cloud connections.
-"""
 import json
 
 import requests
@@ -53,12 +51,13 @@ class OICException(Exception):
     """Exception for cases when an error code is returned from the server."""
 
     def __init__(self, expect, resp):
-        """ Create OICException.
+        """Create OICException.
 
         Args
         ----------
         expect: Expected HTTP Response code
         resp: Received response object from requests.
+
         """
         message = ("Exception during API call\n"
                    "Status code: {}, {} was expected".format(resp.status_code,
@@ -228,8 +227,9 @@ class Client(object):
                       *args, **kwargs):
         """Make a request using global settings.
 
-        Raises an OICException if a status code other than expect
-        is returned.
+        Raises an OICException if a status code other than expect is
+        returned.
+
         """
         headers = kwargs.pop("headers", self.get_headers(authorize=authorize))
         proxies = kwargs.pop("proxies", self.proxies)
@@ -244,49 +244,53 @@ class Client(object):
         return resp
 
     def get(self, endpoint, authorize=True, *args, **kwargs):
-        """ Make a GET request.
+        """Make a GET request.
 
         Args:
         ----------
         endpoint: Endpoint without the API root.
         authorize: Whether authorization token should be included.
         Other arguments are passed to requests module.
+
         """
         return self._make_request(requests.get, endpoint, authorize,
                                   *args, **kwargs)
 
     def post(self, endpoint, authorize=True, *args, **kwargs):
-        """ Make a POST request.
+        """Make a POST request.
 
         Args:
         ----------
         endpoint: Endpoint without the API root.
         authorize: Whether authorization token should be included.
         Other arguments are passed to requests module.
+
         """
         return self._make_request(requests.post, endpoint, authorize,
                                   *args, **kwargs)
 
     def put(self, endpoint, authorize=True, *args, **kwargs):
-        """ Make a PUT request.
+        """Make a PUT request.
 
         Args:
         ----------
         endpoint: Endpoint without the API root.
         authorize: Whether authorization token should be included.
         Other arguments are passed to requests module.
+
         """
         return self._make_request(requests.put, endpoint, authorize,
                                   *args, **kwargs)
 
     def delete(self, endpoint, authorize=True, *args, **kwargs):
-        """ Make a DELETE request.
+        """Make a DELETE request.
 
         Args:
         ----------
         endpoint: Endpoint without the API root.
         authorize: Whether authorization token should be included.
         Other arguments are passed to requests module.
+
         """
         return self._make_request(requests.delete, endpoint, authorize,
                                   *args, **kwargs)

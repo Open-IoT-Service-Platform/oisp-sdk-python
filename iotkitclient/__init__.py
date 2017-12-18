@@ -25,7 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-""" Python API for connection to Open IOT Connector REST API """
+"""Python API for connection to Open IOT Connector REST API."""
 
 from account import Account
 from client import Client

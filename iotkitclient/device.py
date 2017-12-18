@@ -24,12 +24,11 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""Methods for IoT Analytics device management and data submission."""
 
-"""@package Device
-Methods for IoT Analytics device management and data submission
-"""
 from datetime import datetime
 import uuid
+
 
 # pylint: disable=too-many-instance-attributes
 # The attributes match those defined in the REST API
@@ -45,6 +44,12 @@ class Device(object):
     # Argument match attributes as defined in the REST API
     def __init__(self, account, device_id, name, gateway_id, domain_id,
                  created_on):  # TODO include status
+        """Create a device object.
+
+        This method does not create a device on host. For this, see
+        create_device method in the Account class.
+
+        """
         self.account = account
         self.client = self.account.client
         self.device_id = device_id
@@ -59,8 +64,7 @@ class Device(object):
 
     @staticmethod
     def from_json(account, json_dict):
-        """Create an device object using a json_dicton as returned by the
-        host."""
+        """Create an device using json dictionary returned by the host."""
         return Device(account=account,
                       device_id=json_dict.get("deviceId"),
                       name=json_dict.get("name"),
