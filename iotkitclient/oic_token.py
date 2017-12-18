@@ -1,5 +1,8 @@
-""" Module for managing user and (future) device tokens.
-for IOT Analytics Cloud API"""
+"""Module for managing user and (future) device tokens.
+
+for IOT Analytics Cloud API
+
+"""
 
 from datetime import datetime
 
@@ -9,22 +12,26 @@ from account import Account
 
 # pylint: disable=too-many-instance-attributes
 # An attribute is required for every json field
+
+
 class UserToken(object):
-    """ Store user token information. """
+    """Store user token information."""
 
     # pylint: disable=too-many-arguments
     # Many arguments are required as many many fields are stored
     # in this object.
     def __init__(self, value, jti, issued_by, user_id, expires_by,
                  accounts=None, typ="JWT", alg="RS256"):
-        """ Create a Token
+        """Create a Token.
 
         Args:
         ----------
         value: String value of the token.
         All other arguments are contained in Repsonse from
         /auth/tokenInfo . Expires at can be given as a string
-        or datetime object."""
+        or datetime object.
+
+        """
         self.value = value
         self.typ = typ
         self.alg = alg
@@ -40,8 +47,9 @@ class UserToken(object):
 
     @staticmethod
     def from_json(token_str, json_dict, client):
-        """ Return a Token using a JSON dictionary as obtained
-        from API endpoint /auth/tokenInfo
+        """Return a Token using a JSON dictionary as obtained from REST API.
+
+        /auth/tokenInfo.
 
         Args
         ----------
@@ -61,6 +69,7 @@ class UserToken(object):
                     "exp": "2014-10-02T07:53:25.361Z"
                 }
             }
+
         """
         try:
             typ = json_dict["header"]["typ"]
@@ -83,9 +92,8 @@ class UserToken(object):
                          user_id=user_id, expires_by=expires_by,
                          accounts=accounts, typ=typ, alg=alg)
 
-
     def is_expired(self):
-        """ Return whether token is expired."""
+        """Return whether token is expired."""
         return datetime.now(self.expires_by.tzinfo) > self.expires_by
 
     def __str__(self):
