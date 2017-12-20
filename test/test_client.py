@@ -25,8 +25,47 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Python API for connection to Open IOT Connector REST API."""
+import unittest
+import test.config as config
+from test.basecase import BaseCase
 
-from iotkitclient.account import Account
-from iotkitclient.client import Client
-from iotkitclient.device import Device
+import iotkitclient
+
+
+class AuthTestCase(unittest.TestCase):
+
+    def test_connection(self):
+        client = iotkitclient.Client(config.api_url,
+                                     proxies=config.proxies)
+
+    def test_auth_fail(self):
+        wrong_password = "wrong_password"
+        client = iotkitclient.Client(config.api_url,
+                                     proxies=config.proxies)
+
+        try:
+            client.auth(config.username, wrong_password)
+            login_sucessful_with_wrong_password = True
+        except iotkitclient.client.OICException as e:
+            self.assertEqual(e.code,
+                             iotkitclient.client.OICException.NOT_AUTHORIZED)
+            login_sucessful_with_wrong_password = False
+
+        self.assertFalse(login_sucessful_with_wrong_password)
+
+    def test_auth_success(self):
+        client = iotkitclient.Client(config.api_url,
+                                     proxies=config.proxies)
+        client.auth(config.username, config.password)
+
+
+class GetCreateAccountTestCase(BaseCase):
+
+    def test_get_create_account(self):
+        accounts = self.client.get_accounts()
+        self.assertEqual(accounts, [])
+        account = self.client.create_account("test_account")
+        # Reauth to access new Account
+        self.client.auth(config.username, config.password)
+        accounts = self.client.get_accounts
+        self.assertEqual(accounts, [account])
