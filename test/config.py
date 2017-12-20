@@ -25,8 +25,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Python API for connection to Open IOT Connector REST API."""
+# IoT Analytics server info#
+api_url = "http://localhost/v1/api"
+proxies = None
 
-from iotkitclient.account import Account
-from iotkitclient.client import Client
-from iotkitclient.device import Device
+# user account to use
+username = "testuser"
+password = "P@ssw0rd"

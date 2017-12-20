@@ -24,9 +24,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # IoT Analytics server info#
-api_url = "https://streammyiot.com/v1/api"
+api_url = "http://localhost/v1/api"
 proxies = None
 
 # user account to use
-username = "ali.r.kocal@intel.com"
-password = "P@ssw0rd!"
+username = "testuser"
+password = "P@ssw0rd"

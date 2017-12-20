@@ -26,7 +26,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """User management module."""
 
-from account import Account
+from iotkitclient.account import Account
 
 
 # pylint: disable=too-many-instance-attributes

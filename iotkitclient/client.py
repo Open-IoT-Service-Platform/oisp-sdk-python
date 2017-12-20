@@ -30,9 +30,9 @@ import json
 
 import requests
 
-from account import Account
-from oic_token import UserToken
-from oic_user import User
+from iotkitclient.account import Account
+from iotkitclient.oic_token import UserToken
+from iotkitclient.oic_user import User
 
 
 class AuthenticationError(Exception):
@@ -50,6 +50,8 @@ class AuthenticationError(Exception):
 class OICException(Exception):
     """Exception for cases when an error code is returned from the server."""
 
+    NOT_AUTHORIZED = 401
+
     def __init__(self, expect, resp):
         """Create OICException.
 
@@ -66,6 +68,7 @@ class OICException(Exception):
         if resp_json:
             pretty = json.dumps(resp_json, indent=4, separators=(',', ': '))
             message += "\nError message: {}".format(pretty)
+            self.code = resp_json.get("code")
         super(OICException, self).__init__(message)
 
 

@@ -26,7 +26,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """Methods for IoT Analytics account management."""
 
-from device import Device
+from iotkitclient.device import Device
 
 
 # pylint: disable=too-many-instance-attributes
