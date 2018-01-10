@@ -54,6 +54,12 @@ class Account(object):
                                                            self.account_id,
                                                            self.role)
 
+    def __eq__(self, other):
+        if not isinstance(other, Account):
+            return NotImplemented
+        return ((self.name, self.account_id, self.role) ==
+                (other.name, other.account_id, other.role))
+
     def delete(self):
         """Delete account."""
         self.client.delete(self.account_url, expect=204)
