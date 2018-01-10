@@ -9,7 +9,7 @@ test: install lint-light
 
 	@$(call msg,"Adding a user for testing ...")
 	@docker exec -it openiotconnector_dashboard_1 node /app/admin addUser $(USERNAME) $(PASSWORD) $(ROLE)
-	@$(call msg,"Starting unittests ...")
+	@$(call msg,"Starting Integrity Tests ...")
 	python -m unittest
 
 format-files: .install-deps

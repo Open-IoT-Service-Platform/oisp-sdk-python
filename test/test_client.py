@@ -67,5 +67,5 @@ class GetCreateAccountTestCase(BaseCase):
         account = self.client.create_account("test_account")
         # Reauth to access new Account
         self.client.auth(config.username, config.password)
-        accounts = self.client.get_accounts
+        accounts = self.client.get_accounts()
         self.assertEqual(accounts, [account])
