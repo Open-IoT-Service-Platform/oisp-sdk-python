@@ -43,11 +43,9 @@ class Account(object):
         self.name = name
         self.account_id = account_id
         self.role = role
-        self.devices = None
         self.activation_code = None
         self.activation_code_valid_until = None
-        # TODO rename this to url for consistency among project
-        self.account_url = "/accounts/{}".format(self.account_id)
+        self.url = "/accounts/{}".format(self.account_id)
 
     def __str__(self):
         return "Account | name: {}\tid:{}\trole:{}".format(self.name,
@@ -62,7 +60,8 @@ class Account(object):
 
     def delete(self):
         """Delete account."""
-        self.client.delete(self.account_url, expect=204)
+        self.client.delete(self.url, expect=204)
+        self.client.user_token.accounts.pop(self)
         # TODO inform client
 
     def get_activation_code(self, auto_refresh=True):
@@ -73,7 +72,7 @@ class Account(object):
         Otherwise it will return None
 
         """
-        endpoint = self.account_url + "/activationcode"
+        endpoint = self.url + "/activationcode"
         resp = self.client.get(endpoint, expect=200)
         activation_code = resp.json()["activationCode"]
         # time_left = resp.json()["timeLeft"]
@@ -89,7 +88,7 @@ class Account(object):
         Returns the activation code as string.
 
         """
-        endpoint = self.account_url + "/activationcode/refresh"
+        endpoint = self.url + "/activationcode/refresh"
         resp = self.client.put(endpoint, expect=200)
         self.activation_code = resp.json()["activationCode"]
         return self.activation_code
@@ -113,22 +112,22 @@ class Account(object):
         status (str): Filter by status
 
         """
-        endpoint = self.account_url + "/devices"
-        endpoint += "&".join(["{}={}".format(param, locals()[param])
+        endpoint = self.url + "/devices"
+        endpoint += "&".join(["{}={}".format(param, locals().get(param))
                               for param in ["sort", "order", "limit", "skip",
                                             "device_id", "gateway_id", "name",
                                             "status"]
-                              if locals()[param] is not None])
+                              if locals().get(param) is not None])
 
         resp = self.client.get(endpoint, expect=200)
-        self.devices = []  # TODO decide whether old devices should be kept
+        devices = []
         for device_json in resp.json():
-            self.devices.append(Device.from_json(self, device_json))
-        return self.devices
+            devices.append(Device.from_json(self, device_json))
+        return devices
 
     def get_device(self, device_id):
         """Get device with given id."""
-        endpoint = self.account_url + "/devices/" + device_id
+        endpoint = self.url + "/devices/" + device_id
         resp = self.client.get(endpoint, 200)
         return Device.from_json(self, resp.json())
 
@@ -151,12 +150,12 @@ class Account(object):
         if attributes:
             payload["attributes"] = attributes
         resp = self.client.post(endpoint, data=payload, expect=201)
-
+        print(resp.json())
         return Device.from_json(self, resp.json())
 
     def get_device_tags(self):
         """Return a list of all device tags."""
-        endpoint = self.account_url + "/devices/tags"
+        endpoint = self.url + "/devices/tags"
         resp = self.client.get(endpoint, expect=200)
         return resp.json()
 
@@ -166,10 +165,6 @@ class Account(object):
         Each entry contains a list for all values for an attribute
 
         """
-        endpoint = self.account_url + "/devices/attributes"
+        endpoint = self.url + "/devices/attributes"
         resp = self.client.get(endpoint, expect=200)
         return resp.json()
-
-#    def get_component_types(self):  # TODO OOP
-#        endpoint = "/accounts/{}/cmpcatalog?full=true".format(self.account_id)
-#        return self.client.get(endpoint)

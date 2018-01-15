@@ -42,8 +42,8 @@ class Device(object):
 
     # pylint: disable=too-many-arguments
     # Argument match attributes as defined in the REST API
-    def __init__(self, account, device_id, name, gateway_id, domain_id,
-                 created_on):  # TODO include status
+    def __init__(self, account, device_id, name, status,
+                 gateway_id, domain_id, created_on):
         """Create a device object.
 
         This method does not create a device on host. For this, see
@@ -54,13 +54,14 @@ class Device(object):
         self.client = self.account.client
         self.device_id = device_id
         self.name = name
+        self.status = status
         self.gateway_id = gateway_id
         self.domain_id = domain_id
         if not isinstance(created_on, datetime):
             created_on = datetime.fromtimestamp(created_on / 1e3)
         self.created_on = created_on
-        self.device_url = "/accounts/{}/devices/{}".format(account.account_id,
-                                                           device_id)
+        self.url = "/accounts/{}/devices/{}".format(account.account_id,
+                                                    device_id)
 
     @staticmethod
     def from_json(account, json_dict):
@@ -68,29 +69,38 @@ class Device(object):
         return Device(account=account,
                       device_id=json_dict.get("deviceId"),
                       name=json_dict.get("name"),
+                      status=json_dict.get("status"),
                       gateway_id=json_dict.get("gatewayId"),
                       domain_id=json_dict.get("domainId"),
                       created_on=json_dict.get("created"))
 
     def delete(self):
         """Delete device."""
-        self.client.delete(self.device_url, expect=204)
+        self.client.delete(self.url, expect=204)
 
-    def activate(self):
-        """Activate device."""
-        endpoint = self.device_url + "/activation"
-        # TODO try to use cache
-        payload = {"activationCode": self.account.get_activation_code()}
-        self.client.put(endpoint, data=payload, expect=200)
+    def activate(self, activation_code=None):
+        """Activate device.
+
+        Args
+        ----------
+        activation_code (optional): Activation code got from account,
+        if no activation code is given, one will automatically be
+        requested."""
+        if activation_code is None:
+            activation_code = self.account.get_activation_code()
+        endpoint = self.url + "/activation"
+        payload = {"activationCode": activation_code}
+        response = self.client.put(endpoint, data=payload, expect=200)
+        return response.json().get("deviceToken")
 
     # pylint: disable=unused-argument
     # The arguments are accesses through locals()
-    def update(self, gateway_id=None, name=None, loc=None, tags=None,
-               attributes=None):  # TODO reconsider naming
+    def set_properties(self, gateway_id=None, name=None, loc=None, tags=None,
+                       attributes=None):
         """Change device properities."""
         payload = {k: v for k, v in locals().items() if k != "self" and v}
-        self.client.put(self.device_url, data=payload, expect=200)
-        self.__dict__.update(payload)  # TODO consider updating all
+        self.client.put(self.url, data=payload, expect=200)
+        self.__dict__.update(payload)
 
     def add_component(self, name, component_type, cid=None):
         """Add a new component to the device.
@@ -103,16 +113,16 @@ class Device(object):
         generated.
 
         """
-        endpoint = self.device_url + "/components"
+        endpoint = self.url + "/components"
         if not cid:
             cid = str(uuid.uuid4())
         payload = {"cid": cid, "name": name, "type": component_type}
         resp = self.client.post(endpoint, data=payload, expect=201)
         return resp.json()
-        # TODO autotmatically update components when the classes are defined
+        # TODO automatically update components when the classes are defined
         # TODO allow ComponentType objects if you define those
 
     def delete_component(self, component_id):
         """Delete component with given id."""
-        endpoint = "{}/components/{}".format(self.device_url, component_id)
+        endpoint = "{}/components/{}".format(self.url, component_id)
         self.client.delete(endpoint, expect=204)
