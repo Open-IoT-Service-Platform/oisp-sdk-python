@@ -69,10 +69,19 @@ accounts = client.get_accounts()
 account = accounts[0]
 
 # Device's are connected to Account's. You can create a device by specifying its
-# device id and name. #TODO find out uniquness constraints on this one and
-# include in documentation
+# device id and name.
 new_device = account.create_device("my_device_id", "my_device_name")
+
+# Devices need to be activated once, after activation, they are connected to
+# the account performing the activation.
+# Activation returns a device token, which can be used to send/retrieve data
+# without a user token.
+device_token = new_device.activate()
 
 # You can get a list of all devices connected to an account using the following
 # method:
 devices = account.get_devices()
+
+# If you need to access the last Response object directly, you can do so
+# like this:
+response = client.response

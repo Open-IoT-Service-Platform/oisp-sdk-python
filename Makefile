@@ -69,6 +69,9 @@ install: .install
 	sudo pip install -r requirements.txt
 	@touch $@
 
+enter-debug: .install
+	cd samples && python enter_pdb.py;
+
 define msg
 	tput setaf 2 && \
 	for i in $(shell seq 1 80 ); do echo -n "-"; done; echo "" && \

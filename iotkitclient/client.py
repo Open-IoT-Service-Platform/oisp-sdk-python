@@ -49,8 +49,86 @@ class AuthenticationError(Exception):
 
 class OICException(Exception):
     """Exception for cases when an error code is returned from the server."""
-
+    INVALID_REQUEST = 400
     NOT_AUTHORIZED = 401
+    NOT_FOUND = 404
+    TOO_MANY_REQUESTS = 429
+    INTERNAL_SERVER_ERROR = 500
+    ANALYTICS_ERROR = 999
+
+    DEVICE_INVALID_DATA = 1400
+    DEVICE_NOT_FOUND = 1404
+    DEVICE_ALREADY_EXISTS = 1409
+    INVALID_ACTIVATION_CODE = 1410
+    DEVICE_SAVING_ERROR = 1500
+    DEVICE_ACTIVATION_ERROR = 1510
+    DEVICE_DELETION_ERROR = 1512
+    DEVICE_REGISTRATION_ERROR = 1513
+
+    USER_INVALID_DATA = 2300
+    WEAK_PASSWORD = 2401
+    EMAIL_NOT_VERIFIED = 2402
+    ACCOUNT_LOCKED = 2403
+    TERMS_AND_CONDITIONS_ERROR = 2405
+    INVALID_INTERACTION_TOKEN = 2406
+    USER_ALREADY_EXISTS = 2409
+    USER_ALREADY_INVITED = 2420
+    SOCIAL_LOGIN_NOT_CONFIGURED = 2422
+    USER_SAVING_ERROR = 2500
+    CANNOT_SEND_ACTIVATION_EMAIL = 2501
+    USER_SAVING_ERROR_AA = 2502
+    USER_DELETION_ERROR_AA = 2502
+    CANNOT_REDUCE_ADMIN_PRIVILEGES = 2503
+
+    ACCOUNT_INVALID_DATA = 3400
+    CANNOT_CHANGE_TRACK_SENSOR = 3401
+    ACCOUNT_NOT_FOUND = 3404
+    ACCOUNT_ALREADY_EXISTS = 3409
+    ACCOUNT_SAVING_ERROR = 3500
+    # pylint: disable=invalid-name
+    ACCOUNT_SAVING_ERROR_ADD_OR_UPDATE = 3510
+    ACCOUNT_DELETION_ERROR = 3511
+    ACCOUNT_DELETION_ERROR_AA = 3512
+
+    COMPONENT_INVALID_DATA = 5400
+    COMPONENT_NOT_FOUND = 5404
+    COMPONENT_ALREADY_EXISTS = 5409
+    SEARCH_PROCESSING_ERROR = 5410
+    INVALID_PARAMETER_NAME = 5411
+    INVALID_PARAMETER_VALUES = 5412
+
+    DATA_INVALID_DATA = 6400
+    FORMAT_ERROR = 6500
+    # pylint: disable=invalid-name
+    OFFSET_AND_LIMIT_BOTH_OR_NONE_REQUIRED = 6504
+    SUBMISSION_ERROR = 6505
+    WRONG_RESPONSE_CODE_FROM_AA = 6506
+
+    RULE_INVALID_DATA = 7400
+    PROPERTY_MISSING = 7401
+    INVALID_SYNCHRONIZATION_STATUS = 7402
+    RULE_NOT_FOUND = 7404
+    RULE_ALREADY_EXISTS = 7409
+    RULE_NOT_FOUND_FROM_PROXY = 7444
+    RULE_DELETION_ERROR = 7557
+    ACTIVATED_RULE_DELETION_ERROR = 7558
+    CANNOT_USE_API = 7600
+
+    ALERT_RULE_NOT_FOUND = 8401
+    ALERT_ACCOUNT_NOT_FOUND = 8402
+    ALERT_DEVICE_NOT_FOUND = 8403
+    ALERT_NOT_FOUND = 8404
+    WRONG_ALERT_STATUS = 8405
+    ALERT_ALREADY_EXISTS = 8409
+    ALERT_SAVING_ERROR_AA = 8500
+    ALERT_SAVING_ERROR = 8501
+    ALERT_SAVING_ERROR_COMMENTS = 8502
+
+    INVITATION_NOT_FOUND = 10404
+    INVITATION_DELETION_ERROR = 10500
+
+    ACTUATION_SEARCH_ERROR = 12500
+    ACTUATION_SAVING_ERROR = 12501
 
     def __init__(self, expect, resp):
         """Create OICException.
@@ -100,6 +178,8 @@ class Client(object):
         self.verify_certs = verify_certs
         self.user_token = None
         self.user_id = None
+        # Contains last reponse
+        self.response = None
         # Test connection
         self.get_server_info()
 
@@ -242,6 +322,7 @@ class Client(object):
         url = self.base_url + endpoint
         resp = request_func(url, headers=headers, proxies=proxies,
                             verify=verify, *args, **kwargs)
+        self.response = resp
         if expect and resp.status_code != expect:
             raise OICException(expect, resp)
         return resp
