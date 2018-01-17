@@ -62,7 +62,6 @@ class Account(object):
         """Delete account."""
         self.client.delete(self.url, expect=204)
         self.client.user_token.accounts.pop(self)
-        # TODO inform client
 
     def get_activation_code(self, auto_refresh=True):
         """Return previous activation code a string if it is still valid.

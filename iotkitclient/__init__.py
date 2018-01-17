@@ -28,5 +28,5 @@
 """Python API for connection to Open IOT Connector REST API."""
 
 from iotkitclient.account import Account
-from iotkitclient.client import Client
+from iotkitclient.client import Client, OICException
 from iotkitclient.device import Device

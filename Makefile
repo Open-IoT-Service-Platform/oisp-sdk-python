@@ -32,10 +32,10 @@ ROLE = "admin"
 
 test: install lint-light
 	@$(call msg,"Resetting database ...")
-	@docker exec -it openiotconnector_dashboard_1 node /app/admin resetDB
+	@$(docker exec -it platformlauncher_dashboard_1 node /app/admin resetDB)
 
 	@$(call msg,"Adding a user for testing ...")
-	@docker exec -it openiotconnector_dashboard_1 node /app/admin addUser $(USERNAME) $(PASSWORD) $(ROLE)
+	@docker exec -it platformlauncher_dashboard_1 node /app/admin addUser $(USERNAME) $(PASSWORD) $(ROLE)
 	@$(call msg,"Starting Integrity Tests ...")
 	python -m unittest
 
