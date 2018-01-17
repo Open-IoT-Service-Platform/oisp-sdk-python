@@ -40,6 +40,9 @@ class Device(object):
 
     """
 
+    STATUS_CREATED = "created"
+    STATUS_ACTIVE = "active"
+
     # pylint: disable=too-many-arguments
     # Argument match attributes as defined in the REST API
     def __init__(self, account, device_id, name, status,
@@ -62,6 +65,12 @@ class Device(object):
         self.created_on = created_on
         self.url = "/accounts/{}/devices/{}".format(account.account_id,
                                                     device_id)
+
+    def __eq__(self, other):
+        if not isinstance(other, Device):
+            return NotImplemented
+        return ((self.name, self.account, self.device_id) ==
+                (other.name, other.account, other.device_id))
 
     @staticmethod
     def from_json(account, json_dict):

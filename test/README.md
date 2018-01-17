@@ -2,7 +2,7 @@
 
 ## How to run tests
 
-First make sure you have a running instance of `open-iot-connector` on localhost. See [this](https://github.com/emea-ssg-drd/open-iot-connector) repository.
+First make sure you have a running instance of oisp on localhost. See platform-launcher repository [here](https://github.com/Open-IoT-Service-Platform) repository.
 
 To run tests:
 ``` bash
