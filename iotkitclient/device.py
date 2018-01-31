@@ -47,7 +47,7 @@ class Device(object):
     # Argument match attributes as defined in the REST API
     def __init__(self, client, account, device_id, name, status,
                  gateway_id, domain_id, created_on, attributes,
-                 device_token=None):
+                 components, device_token=None):
         """Create a device object.
 
         This method does not create a device on host. For this, see
@@ -76,6 +76,7 @@ class Device(object):
         self.created_on = created_on
 
         self.attributes = attributes
+        self.components = components
         self.device_token = device_token
 
         if self.account is not None:
@@ -116,7 +117,8 @@ class Device(object):
                       gateway_id=json_dict.get("gatewayId"),
                       domain_id=json_dict.get("domainId"),
                       created_on=json_dict.get("created"),
-                      attributes=json_dict.get("attributes", {}),
+                      attributes=json_dict.get("attributes"),
+                      components=json_dict.get("components"),
                       device_token=device_token)
 
     def delete(self):
@@ -154,6 +156,9 @@ class Device(object):
     def add_component(self, name, component_type, cid=None):
         """Add a new component to the device.
 
+        Returns a dictionary containing name, type, deviceId and cid,
+        but the component_types list is not updated to save a request.
+
         Args
         ----------
         name: Component name
@@ -166,12 +171,15 @@ class Device(object):
         if not cid:
             cid = str(uuid.uuid4())
         payload = {"cid": cid, "name": name, "type": component_type}
-        resp = self.client.post(endpoint, data=payload, expect=201)
+        auth = self if self.device_token else None
+        resp = self.client.post(endpoint, data=payload, authorize_as=auth,
+                                expect=201)
         return resp.json()
-        # TODO automatically update components when the classes are defined
-        # TODO allow ComponentType objects if you define those
 
     def delete_component(self, component_id):
         """Delete component with given id."""
         endpoint = "{}/components/{}".format(self.url, component_id)
-        self.client.delete(endpoint, expect=204)
+        auth = self if self.device_token else None
+        self.client.delete(endpoint, authorize_as=auth, expect=204)
+        self.components = [c for c in self.components
+                           if c["cid"] != component_id]
