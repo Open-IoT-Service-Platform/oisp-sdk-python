@@ -58,6 +58,16 @@ class DeviceTestCase(BaseCaseWithAccount):
 
         self.assertFalse(can_delete_twice)
 
+    def test_add_remove_component(self):
+        device = self.account.create_device("device_id", "device_name")
+        token = device.activate()
+        resp = device.add_component("temp1", "temperature.v1.0")
+        # method does not update components automatically
+        device_updated = self.account.get_device("device_id")
+        self.assertEqual(len(device_updated.components), 1)
+        device_updated.delete_component(resp["cid"])
+        self.assertEqual(device_updated.components, [])
+
     def test_device_from_token(self):
         device0 = self.account.create_device("device_tsft", "device_tsft")
         d_id = device0.device_id
