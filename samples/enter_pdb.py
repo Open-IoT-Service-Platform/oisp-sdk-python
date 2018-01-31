@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Intel Corporation
+# Copyright (c) 2017-2018, Intel Corporation
 #
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
@@ -30,6 +30,21 @@ import pdb
 client = iotkitclient.Client(api_root=config.api_url, proxies=config.proxies)
 client.auth(config.username, config.password)
 
-account = client.get_accounts()[0]
-devices = account.get_devices()
+try:
+    account = client.get_accounts()[0]
+except IndexError:
+    account = client.create_account("debug_account")
+
+try:
+    device = account.create_device("did", "gwid")
+    device2 = account.create_device("did2", "gwid")
+    token = device.activate()
+    device_id = device.device_id
+    with open("dtoken", "w") as f:
+        f.write(";".join([token, device.device_id]))
+except iotkitclient.OICException:
+    with open("dtoken", "r") as f:
+        token, device_id = f.read().split(";")
+    device = client.get_device(token, device_id)
+
 pdb.set_trace()
