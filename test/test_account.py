@@ -42,3 +42,49 @@ class GetCreateDeviceTestCase(BaseCaseWithAccount):
         self.assertEqual(devices, [device])
         device_by_id = self.account.get_device(device.device_id)
         self.assertEqual(device_by_id, device)
+
+    def test_component_catalog(self):
+        example_ctype = {
+            "id": "temperature.v2.0",
+            "dimension": "temperature",
+            "version": "2.0",
+            "type": "sensor",
+            "dataType": "Number",
+            "format": "float",
+            "min": "-150",
+            "max": "150",
+            "default": False,
+            "measureunit": "Degrees Celsius",
+            "display": "timeSeries"
+        }
+        self.account.create_component_type(dimension="temperature",
+                                           version="2.0",
+                                           ctype="sensor",
+                                           data_type="Number",
+                                           data_format="float",
+                                           measure_unit="Degrees Celsius",
+                                           display="timeSeries",
+                                           min_val=-150,
+                                           max_val=150)
+        component_types = self.account.get_component_types_catalog(full=True)
+        # Remove some for testing
+        for ct in component_types:
+            ct.pop("href")
+            ct.pop("_id")
+            ct.pop("domainId")
+        self.assertTrue(example_ctype in component_types)
+
+        self.account.update_component_type("temperature.v2.0", max_val=200)
+
+        component_types = self.account.get_component_types_catalog(full=True)
+        # Remove some for testing
+        for ct in component_types:
+            ct.pop("href")
+            ct.pop("_id")
+            ct.pop("domainId")
+
+        example_ctype["id"] = "temperature.v2.1"
+        example_ctype["version"] = "2.1"
+        example_ctype["max"] = "200"
+
+        self.assertTrue(example_ctype in component_types)
