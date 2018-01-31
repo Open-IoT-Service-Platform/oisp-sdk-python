@@ -121,14 +121,14 @@ class Account(object):
         resp = self.client.get(endpoint, expect=200)
         devices = []
         for device_json in resp.json():
-            devices.append(Device.from_json(self, device_json))
+            devices.append(Device.from_json(device_json, account=self))
         return devices
 
     def get_device(self, device_id):
         """Get device with given id."""
         endpoint = self.url + "/devices/" + device_id
         resp = self.client.get(endpoint, 200)
-        return Device.from_json(self, resp.json())
+        return Device.from_json(resp.json(), account=self)
 
     def create_device(self, device_id, name, gateway_id=None, tags=None,
                       loc=None, attributes=None):
@@ -149,8 +149,7 @@ class Account(object):
         if attributes:
             payload["attributes"] = attributes
         resp = self.client.post(endpoint, data=payload, expect=201)
-        print(resp.json())
-        return Device.from_json(self, resp.json())
+        return Device.from_json(resp.json(), account=self)
 
     def get_device_tags(self):
         """Return a list of all device tags."""

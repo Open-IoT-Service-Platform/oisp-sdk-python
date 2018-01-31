@@ -45,50 +45,89 @@ class Device(object):
 
     # pylint: disable=too-many-arguments
     # Argument match attributes as defined in the REST API
-    def __init__(self, account, device_id, name, status,
-                 gateway_id, domain_id, created_on):
+    def __init__(self, client, account, device_id, name, status,
+                 gateway_id, domain_id, created_on, attributes,
+                 device_token=None):
         """Create a device object.
 
         This method does not create a device on host. For this, see
         create_device method in the Account class.
 
         """
+        assert device_id is not None, "Device ID can not be None"
+        assert account or (client and device_token and device_id), """
+        Either account or both client and device_token parameters are required
+         to create a device"""
+
         self.account = account
-        self.client = self.account.client
+
+        if client is None:
+            client = account.client
+        self.client = client
+
         self.device_id = device_id
         self.name = name
         self.status = status
         self.gateway_id = gateway_id
         self.domain_id = domain_id
-        if not isinstance(created_on, datetime):
+
+        if not isinstance(created_on, datetime) and created_on is not None:
             created_on = datetime.fromtimestamp(created_on / 1e3)
         self.created_on = created_on
-        self.url = "/accounts/{}/devices/{}".format(account.account_id,
-                                                    device_id)
+
+        self.attributes = attributes
+        self.device_token = device_token
+
+        if self.account is not None:
+            self.url = "/accounts/{}/devices/{}".format(account.account_id,
+                                                        device_id)
+        else:
+            self.url = "/devices/{}".format(device_id)
 
     def __eq__(self, other):
         if not isinstance(other, Device):
             return NotImplemented
-        return ((self.name, self.account, self.device_id) ==
-                (other.name, other.account, other.device_id))
+        return ((self.name, self.device_id) ==
+                (other.name, other.device_id))
 
     @staticmethod
-    def from_json(account, json_dict):
-        """Create an device using json dictionary returned by the host."""
-        return Device(account=account,
+    def from_json(json_dict, account=None, client=None, device_token=None):
+        """Create an device using json dictionary returned by the host.
+
+        Either account or both client and device_token parameters are
+        required.
+        json_dict does not need to be complete, but device_id is required.
+
+        Args:
+        ----------
+        json_dict: A JSON dictionary as returned by the service, does not
+        need to be complete, but has to contain key "deviceId".
+        account (optional): The account that the device is connected to
+        client (optinal): a client object to make device related queries with.
+        device_token (optional): device token as returned after activation.
+
+        """
+        assert "deviceId" in json_dict, "Device ID is required in json_dict."
+        return Device(client=client,
+                      account=account,
                       device_id=json_dict.get("deviceId"),
                       name=json_dict.get("name"),
                       status=json_dict.get("status"),
                       gateway_id=json_dict.get("gatewayId"),
                       domain_id=json_dict.get("domainId"),
-                      created_on=json_dict.get("created"))
+                      created_on=json_dict.get("created"),
+                      attributes=json_dict.get("attributes", {}),
+                      device_token=device_token)
 
     def delete(self):
-        """Delete device."""
+        """Delete device.
+
+        This needs a client with login, device authorization
+        is not sufficent for delete operation."""
         self.client.delete(self.url, expect=204)
 
     def activate(self, activation_code=None):
-        """Activate device.
+        """Activate device, return device token
 
         Args
         ----------
@@ -108,7 +147,8 @@ class Device(object):
                        attributes=None):
         """Change device properities."""
         payload = {k: v for k, v in locals().items() if k != "self" and v}
-        self.client.put(self.url, data=payload, expect=200)
+        auth = self if self.device_token else None
+        self.client.put(self.url, data=payload, expect=200, authorize_as=auth)
         self.__dict__.update(payload)
 
     def add_component(self, name, component_type, cid=None):

@@ -31,6 +31,7 @@ import json
 import requests
 
 from iotkitclient.account import Account
+from iotkitclient.device import Device
 from iotkitclient.oic_token import UserToken
 from iotkitclient.oic_user import User
 
@@ -140,13 +141,17 @@ class OICException(Exception):
 
         """
         message = ("Exception during API call\n"
-                   "Status code: {}, {} was expected".format(resp.status_code,
-                                                             expect))
-        resp_json = resp.json()
-        if resp_json:
-            pretty = json.dumps(resp_json, indent=4, separators=(',', ': '))
-            message += "\nError message: {}".format(pretty)
-            self.code = resp_json.get("code")
+                   "HTTP code: {}, {} was expected".format(resp.status_code,
+                                                           expect))
+        try:
+            resp_json = resp.json()
+            if resp_json:
+                pretty = json.dumps(resp_json, indent=4,
+                                    separators=(',', ': '))
+                message += "\nError message: {}".format(pretty)
+                self.code = resp_json.get("code")
+        except json.JSONDecodeError:
+            message += "\nResponse: {}".format(resp.content)
         super(OICException, self).__init__(message)
 
 
@@ -183,25 +188,36 @@ class Client(object):
         # Test connection
         self.get_server_info()
 
-    def get_headers(self, authorize=True):
+    def get_headers(self, authorize_as=None, authorize=True):
         """Return a JSON dictionary containing request headers.
 
         Args:
         ---------
-        authorized (bool, optional): Whether user token is to be included
+        authorize (bool, optional): Whether auth token is to be included
+        authorize_as (optional): When using device authorization, a device
+        object with a valid device_token has to be given.
+        If this is None (default), client will attempt user authorization.
 
         """
         headers = {"content-type": "application/json"}
         if not authorize:
             return headers
 
-        if not self.user_token:
-            raise AuthenticationError("You need to authenticate using "
-                                      "the auth method first.")
-        if self.user_token.is_expired():
-            raise AuthenticationError("UserToken expired, you need to use "
-                                      "the auth method again.")
-        headers["Authorization"] = "Bearer " + self.user_token.value
+        if authorize_as is None:
+            if not self.user_token:
+                raise AuthenticationError("You need to authenticate using "
+                                          "the auth method first, or authorize"
+                                          "as a device")
+            if self.user_token.is_expired():
+                raise AuthenticationError("UserToken expired, you need to use "
+                                          "the auth method again.")
+            token = self.user_token.value
+        else:
+            assert isinstance(authorize_as, Device), """You can only authorize as
+            Device, leave authorize_as empty for user authorization."""
+            token = authorize_as.device_token
+
+        headers["Authorization"] = "Bearer " + token
         return headers
 
     def auth(self, username, password):
@@ -293,6 +309,28 @@ class Client(object):
         """Get a list of accounts connected to current authentication token."""
         return self.user_token.accounts
 
+    def get_device(self, device_token, device_id, fetch_info=True):
+        """Get a device using a device token.
+
+        Args:
+        ----------
+        device_token (str): as received while activating device.
+        fetch_info (boolean): whether to fetch device information,
+        currently, it will only check whether token is valid."""
+        fetch_info = fetch_info
+        headers = self.get_headers(authorize=False)
+        headers["Authorization"] = "Bearer " + device_token
+
+        url = "/devices/{}".format(device_id)
+        if fetch_info:
+            response = self.get(url, headers=headers, authorize=False,
+                                expect=200)
+            json_dict = response.json()
+        else:
+            json_dict = {"deviceId": device_id}
+        return Device.from_json(json_dict, client=self,
+                                device_token=device_token)
+
     def create_account(self, name):
         """Create an account with given name and return an Account instance.
 
@@ -306,28 +344,36 @@ class Client(object):
         return Account(self, resp_json["name"], resp_json["id"],
                        Account.ROLE_ADMIN)
 
-    def _make_request(self, request_func, endpoint, authorize, expect=None,
-                      *args, **kwargs):
+    # pylint: disable=too-many-arguments
+    # All arguments are necessary and this method is not exposed
+    def _make_request(self, request_func, endpoint, authorize, authorize_as,
+                      expect=None, *args, **kwargs):
         """Make a request using global settings.
 
         Raises an OICException if a status code other than expect is
         returned.
 
         """
-        headers = kwargs.pop("headers", self.get_headers(authorize=authorize))
+        headers = kwargs.pop("headers",
+                             self.get_headers(authorize=authorize,
+                                              authorize_as=authorize_as))
+
         proxies = kwargs.pop("proxies", self.proxies)
         verify = kwargs.pop("verify", self.verify_certs)
+
         if "data" in kwargs and isinstance(kwargs.get("data"), dict):
             kwargs["data"] = json.dumps(kwargs["data"])
+
         url = self.base_url + endpoint
         resp = request_func(url, headers=headers, proxies=proxies,
                             verify=verify, *args, **kwargs)
         self.response = resp
-        if expect and resp.status_code != expect:
+        if expect and (resp.status_code != expect):
             raise OICException(expect, resp)
         return resp
 
-    def get(self, endpoint, authorize=True, *args, **kwargs):
+    def get(self, endpoint, authorize=True, authorize_as=None,
+            *args, **kwargs):
         """Make a GET request.
 
         Args:
@@ -338,9 +384,10 @@ class Client(object):
 
         """
         return self._make_request(requests.get, endpoint, authorize,
-                                  *args, **kwargs)
+                                  authorize_as, *args, **kwargs)
 
-    def post(self, endpoint, authorize=True, *args, **kwargs):
+    def post(self, endpoint, authorize=True, authorize_as=None,
+             *args, **kwargs):
         """Make a POST request.
 
         Args:
@@ -351,9 +398,10 @@ class Client(object):
 
         """
         return self._make_request(requests.post, endpoint, authorize,
-                                  *args, **kwargs)
+                                  authorize_as, *args, **kwargs)
 
-    def put(self, endpoint, authorize=True, *args, **kwargs):
+    def put(self, endpoint, authorize=True, authorize_as=None,
+            *args, **kwargs):
         """Make a PUT request.
 
         Args:
@@ -364,9 +412,10 @@ class Client(object):
 
         """
         return self._make_request(requests.put, endpoint, authorize,
-                                  *args, **kwargs)
+                                  authorize_as, *args, **kwargs)
 
-    def delete(self, endpoint, authorize=True, *args, **kwargs):
+    def delete(self, endpoint, authorize=True, authorize_as=None,
+               *args, **kwargs):
         """Make a DELETE request.
 
         Args:
@@ -377,4 +426,4 @@ class Client(object):
 
         """
         return self._make_request(requests.delete, endpoint, authorize,
-                                  *args, **kwargs)
+                                  authorize_as, *args, **kwargs)

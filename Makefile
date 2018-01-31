@@ -35,7 +35,7 @@ test: install lint-light
 	@$(docker exec -it platformlauncher_dashboard_1 node /app/admin resetDB)
 
 	@$(call msg,"Adding a user for testing ...")
-	@docker exec -it platformlauncher_dashboard_1 node /app/admin addUser $(USERNAME) $(PASSWORD) $(ROLE)
+	@$(docker exec -it platformlauncher_dashboard_1 node /app/admin addUser $(USERNAME) $(PASSWORD) $(ROLE))
 	@$(call msg,"Starting Integrity Tests ...")
 	python -m unittest
 

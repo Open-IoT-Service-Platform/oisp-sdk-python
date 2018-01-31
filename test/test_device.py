@@ -57,3 +57,10 @@ class DeviceTestCase(BaseCaseWithAccount):
             can_delete_twice = False
 
         self.assertFalse(can_delete_twice)
+
+    def test_device_from_token(self):
+        device0 = self.account.create_device("device_tsft", "device_tsft")
+        d_id = device0.device_id
+        token = device0.activate()
+        device1 = self.client.get_device(token, d_id)
+        self.assertEqual(device0, device1)
