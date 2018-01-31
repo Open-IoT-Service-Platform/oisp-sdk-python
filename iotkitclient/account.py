@@ -166,3 +166,80 @@ class Account(object):
         endpoint = self.url + "/devices/attributes"
         resp = self.client.get(endpoint, expect=200)
         return resp.json()
+
+    def get_component_types_catalog(self, full=False):
+        """Return a JSON list, containing dictionaries for component types."""
+        endpoint = self.url + "/cmpcatalog"
+        if full:
+            endpoint += "?full=true"
+        resp = self.client.get(endpoint, expect=200)
+        return resp.json()
+
+    def create_component_type(self, dimension, version, ctype, data_type,
+                              data_format, measure_unit, display,
+                              min_val=None, max_val=None):
+        """Create a component type.
+
+        Args:
+        ----------
+        See API documentation for endpoint /{account_id}/cmpcatalog, below
+        are some examples for each parameter:
+        dimension (str): "temperature"
+        version (str): "1.0", "2.0"
+        ctype: "sensor" | "actuator"
+        data_type: "Number" | "String" | "Boolean" | "ByteArray"
+        data_format: "float" | "boolean" | "string" | "percentage" | "integer"
+        measure_unit (str): "Degress Celcius"
+        display: "timeSeries", "rawData", "binaryDataRenderer"
+        min_val (optional): minimum value
+        max_val (optional): maximum value
+        """
+        endpoint = self.url + "/cmpcatalog"
+        payload = {"dimension": dimension, "version": version, "type": ctype,
+                   "dataType": data_type, "format": data_format,
+                   "measureunit": measure_unit, "display": display}
+        if min_val:
+            payload["min"] = min_val
+        if max_val:
+            payload["max"] = max_val
+        self.client.post(endpoint, data=payload, expect=201)
+
+    def update_component_type(self, component_type_id, dimension=None,
+                              ctype=None, data_type=None, data_format=None,
+                              measure_unit=None, display=None,
+                              min_val=None, max_val=None):
+        """Update a component type.
+
+        Minor version info will be incremented by 1, returns updated component
+        type as dictionary
+
+        Args:
+        ----------
+        See Account.create_component_type
+        """
+        endpoint = self.url + "/cmpcatalog/{}".format(component_type_id)
+        payload = {}
+        if dimension:
+            payload["dimension"] = dimension
+        if ctype:
+            payload["type"] = ctype
+        if data_type:
+            payload["dataType"] = data_type
+        if data_format:
+            payload["format"] = data_format
+        if measure_unit:
+            payload["measureunit"] = measure_unit
+        if display:
+            payload["display"] = display
+        if min_val:
+            payload["min"] = min_val
+        if max_val:
+            payload["max"] = max_val
+        resp = self.client.put(endpoint, data=payload, expect=201)
+        return resp.json()
+
+    def get_component_type(self, component_type_id):
+        """Return a JSON dictionary containing component type information."""
+        endpoint = self.url + "/cmpcatalog/{}".format(component_type_id)
+        resp = self.client.get(endpoint, expect=200)
+        return resp.json()
