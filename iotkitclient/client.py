@@ -50,6 +50,7 @@ class AuthenticationError(Exception):
 
 class OICException(Exception):
     """Exception for cases when an error code is returned from the server."""
+
     INVALID_REQUEST = 400
     NOT_AUTHORIZED = 401
     NOT_FOUND = 404
@@ -309,14 +310,19 @@ class Client(object):
         """Get a list of accounts connected to current authentication token."""
         return self.user_token.accounts
 
-    def get_device(self, device_token, device_id, fetch_info=True):
+    def get_device(self, device_token, device_id, domain_id=None,
+                   fetch_info=True):
         """Get a device using a device token.
 
         Args:
         ----------
         device_token (str): as received while activating device.
-        fetch_info (boolean): whether to fetch device information,
-        currently, it will only check whether token is valid."""
+        device_id (str): device id on the service.
+        domain_id (str): as received while activating the device,
+        this is the same as the account_id of the account the device
+        is bound to.
+        fetch_info (boolean): whether to fetch device information.
+        """
         fetch_info = fetch_info
         headers = self.get_headers(authorize=False)
         headers["Authorization"] = "Bearer " + device_token
@@ -327,7 +333,9 @@ class Client(object):
                                 expect=200)
             json_dict = response.json()
         else:
-            json_dict = {"deviceId": device_id}
+            json_dict = {"deviceId": device_id,
+                         "domainId": domain_id}
+
         return Device.from_json(json_dict, client=self,
                                 device_token=device_token)
 
@@ -357,7 +365,6 @@ class Client(object):
         headers = kwargs.pop("headers",
                              self.get_headers(authorize=authorize,
                                               authorize_as=authorize_as))
-
         proxies = kwargs.pop("proxies", self.proxies)
         verify = kwargs.pop("verify", self.verify_certs)
 

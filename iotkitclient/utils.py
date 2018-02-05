@@ -25,17 +25,28 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# IoT Analytics server info#
-api_url = "http://localhost/v1/api"
-proxies = None
+"""Helper methods for various parts.
 
-# dashboard container name
-dashboard_container = "platformlauncher_dashboard_1"
+These methods are meant to be used within the module.
+"""
 
-# user account to use
-username = "testuser"
-password = "P@ssw0rd"
-role = "admin"
+import re
 
-# account data
-accountname = "testaccount"
+
+def camel_to_underscore(camel_str):
+    """Convert a camelCase string to underscore_notation.
+
+    This is useful for converting JSON style variable names
+    to python style variable names.
+    """
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', camel_str).lower()
+
+
+def underscore_to_camel(underscore_str):
+    """Convert a underscore_notation string to camelCase.
+
+    This is useful for converting python style variable names
+    to JSON style variable names.
+    """
+    return ''.join(w.title() if i else w
+                   for i, w in enumerate(underscore_str.split('_')))

@@ -23,9 +23,25 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+"""Modify and use this file to create a debug scenario."""
+
+import os
+
 import iotkitclient
 import config
 import pdb
+
+reset_db = False # True
+
+if reset_db:
+    print("Resetting DB")
+    os.system("docker exec -it {} node /app/admin "
+              "resetDB &> /dev/null".format(config.dashboard_container))
+    os.system("docker exec -it {} node /app/admin addUser {} {} {} "
+              "&> /dev/null".format(config.dashboard_container,
+                                    config.username,
+                                    config.password,
+                                    config.role))
 
 client = iotkitclient.Client(api_root=config.api_url, proxies=config.proxies)
 client.auth(config.username, config.password)
@@ -36,9 +52,10 @@ except IndexError:
     account = client.create_account("debug_account")
 
 try:
-    device = account.create_device("did", "gwid")
-    device2 = account.create_device("did2", "gwid")
+    device = account.create_device("did", "dname", "gwid")
+    device2 = account.create_device("did2", "dname2", "gwid")
     token = device.activate()
+    resp = device.add_component("temp1", "temperature.v1.0")
     device_id = device.device_id
     with open("dtoken", "w") as f:
         f.write(";".join([token, device.device_id]))
@@ -46,5 +63,8 @@ except iotkitclient.OICException:
     with open("dtoken", "r") as f:
         token, device_id = f.read().split(";")
     device = client.get_device(token, device_id)
+
+cid = device.components[0]["cid"]
+
 
 pdb.set_trace()

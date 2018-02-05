@@ -44,7 +44,6 @@ class Account(object):
         self.account_id = account_id
         self.role = role
         self.activation_code = None
-        self.activation_code_valid_until = None
         self.url = "/accounts/{}".format(self.account_id)
 
     def __str__(self):
@@ -78,7 +77,6 @@ class Account(object):
         if not activation_code and auto_refresh:
             activation_code = self.refresh_activation_code()
         self.activation_code = activation_code
-        self.activation_code_valid_until = None  # TODO check for validation
         return activation_code
 
     def refresh_activation_code(self):
