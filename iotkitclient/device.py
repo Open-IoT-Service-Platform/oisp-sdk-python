@@ -26,8 +26,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """Methods for IoT Analytics device management and data submission."""
 
+import time
 from datetime import datetime
 import uuid
+
+from iotkitclient.utils import camel_to_underscore, underscore_to_camel
 
 
 # pylint: disable=too-many-instance-attributes
@@ -37,7 +40,6 @@ class Device(object):
 
     To find or filter devices connected to an account, refer to the
     Account class.
-
     """
 
     STATUS_CREATED = "created"
@@ -45,45 +47,38 @@ class Device(object):
 
     # pylint: disable=too-many-arguments
     # Argument match attributes as defined in the REST API
-    def __init__(self, client, account, device_id, name, status,
-                 gateway_id, domain_id, created_on, attributes,
-                 components, device_token=None):
+    def __init__(self, device_id, client=None, account=None, name=None,
+                 status=None, gateway_id=None, domain_id=None,
+                 created=None, attributes=None, components=None,
+                 device_token=None):
         """Create a device object.
 
         This method does not create a device on host. For this, see
         create_device method in the Account class.
-
         """
         assert device_id is not None, "Device ID can not be None"
         assert account or (client and device_token and device_id), """
         Either account or both client and device_token parameters are required
-         to create a device"""
-
-        self.account = account
+        to create a device"""
 
         if client is None:
             client = account.client
-        self.client = client
+        if not isinstance(created, datetime) and created is not None:
+            created = datetime.fromtimestamp(created / 1e3)
 
+        self.client = client
+        self.account = account
         self.device_id = device_id
         self.name = name
         self.status = status
         self.gateway_id = gateway_id
         self.domain_id = domain_id
-
-        if not isinstance(created_on, datetime) and created_on is not None:
-            created_on = datetime.fromtimestamp(created_on / 1e3)
-        self.created_on = created_on
-
+        self.created = created
         self.attributes = attributes
         self.components = components
         self.device_token = device_token
 
-        if self.account is not None:
-            self.url = "/accounts/{}/devices/{}".format(account.account_id,
-                                                        device_id)
-        else:
-            self.url = "/devices/{}".format(device_id)
+        self.unsent_data = []
 
     def __eq__(self, other):
         if not isinstance(other, Device):
@@ -108,39 +103,79 @@ class Device(object):
         device_token (optional): device token as returned after activation.
 
         """
-        assert "deviceId" in json_dict, "Device ID is required in json_dict."
-        return Device(client=client,
-                      account=account,
-                      device_id=json_dict.get("deviceId"),
-                      name=json_dict.get("name"),
-                      status=json_dict.get("status"),
-                      gateway_id=json_dict.get("gatewayId"),
-                      domain_id=json_dict.get("domainId"),
-                      created_on=json_dict.get("created"),
-                      attributes=json_dict.get("attributes"),
-                      components=json_dict.get("components"),
-                      device_token=device_token)
+        device = Device(client=client,
+                        account=account,
+                        device_token=device_token,
+                        device_id=json_dict.pop("deviceId"))
+        # pylint: disable=protected-access
+        device._update_with_json(json_dict)
+        return device
+
+    def _update_with_json(self, json_dict):
+        """Update attributes according to json_dict.
+
+        Args:
+        ----------
+        json_dict: A dictionary as returned by the service.
+        """
+        py_dict = {camel_to_underscore(key): value for
+                   key, value in json_dict.items() if value is not None}
+
+        created = py_dict.get("created")
+        if not isinstance(created, datetime) and created is not None:
+            py_dict["created"] = datetime.fromtimestamp(created / 1e3)
+        self.__dict__.update(py_dict)
+
+    @property
+    def url(self):
+        """Return base url for device."""
+        if self.account is not None:
+            return "/accounts/{}/devices/{}".format(self.account.account_id,
+                                                    self.device_id)
+        return "/devices/{}".format(self.device_id)
+
+    @property
+    def auth_as(self):
+        """Return default authorization strategy.
+
+        If device has a device token, it will authorize at itself,
+        otherwise, it will try to use the user token in its registered
+        client (default behaviour in Client, hence None returned).
+        """
+        return self if self.device_token else None
 
     def delete(self):
         """Delete device.
 
         This needs a client with login, device authorization
-        is not sufficent for delete operation."""
+        is not sufficent for delete operation.
+        """
         self.client.delete(self.url, expect=204)
 
     def activate(self, activation_code=None):
-        """Activate device, return device token
+        """Activate device, return dictionary containing device token.
 
         Args
         ----------
         activation_code (optional): Activation code got from account,
-        if no activation code is given, one will automatically be
-        requested."""
+        if no activation code is given but an account object is
+        present (for example if device object is created using the
+        Account.create_device method), one will automatically be requested.
+        """
         if activation_code is None:
+            assert self.account is not None, """Activation code is needed
+            for devices without an account."""
             activation_code = self.account.get_activation_code()
+
         endpoint = self.url + "/activation"
         payload = {"activationCode": activation_code}
         response = self.client.put(endpoint, data=payload, expect=200)
+        account_id = response.json().get("domainId")
+
+        if self.account is not None:
+            assert self.account.account_id == account_id, """Account ID does not
+            match activation code"""
+        self.domain_id = account_id
         return response.json().get("deviceToken")
 
     # pylint: disable=unused-argument
@@ -148,9 +183,11 @@ class Device(object):
     def set_properties(self, gateway_id=None, name=None, loc=None, tags=None,
                        attributes=None):
         """Change device properities."""
-        payload = {k: v for k, v in locals().items() if k != "self" and v}
-        auth = self if self.device_token else None
-        self.client.put(self.url, data=payload, expect=200, authorize_as=auth)
+        payload = {underscore_to_camel(k): v
+                   for k, v in locals().items() if k != "self" and v}
+
+        self.client.put(self.url, data=payload, expect=200,
+                        authorize_as=self.auth_as)
         self.__dict__.update(payload)
 
     def add_component(self, name, component_type, cid=None):
@@ -171,15 +208,74 @@ class Device(object):
         if not cid:
             cid = str(uuid.uuid4())
         payload = {"cid": cid, "name": name, "type": component_type}
-        auth = self if self.device_token else None
-        resp = self.client.post(endpoint, data=payload, authorize_as=auth,
-                                expect=201)
+        resp = self.client.post(endpoint, data=payload,
+                                authorize_as=self.auth_as, expect=201)
+
+        if self.components is None:
+            self.components = []
+
+        self.components.append(resp.json())
         return resp.json()
 
     def delete_component(self, component_id):
         """Delete component with given id."""
         endpoint = "{}/components/{}".format(self.url, component_id)
-        auth = self if self.device_token else None
-        self.client.delete(endpoint, authorize_as=auth, expect=204)
+        self.client.delete(endpoint, authorize_as=self.auth_as, expect=204)
         self.components = [c for c in self.components
                            if c["cid"] != component_id]
+
+    def update(self):
+        """Update device information."""
+        resp = self.client.get(self.url, authorize_as=self.auth_as, expect=200)
+        self._update_with_json(resp.json())
+
+    def add_datapoint(self, component_id, value, on=None, loc=None):
+        """Add a single datapoint.
+
+        Use the submit_data method to send data to the
+        OISP cloud.
+
+        Args:
+        ----------
+        component_id: Id of the component datapoint belongs to.
+        value: Value of datapoint.
+        on (optional): Timestamp in milliseconds, if this is omitted,
+        current time will be used instead.
+        location (optional): Location of the device as the data
+        was recorded.
+        """
+        if on is None:
+            on = int(time.time()*1000)
+        datapoint = {"componentId": component_id,
+                     "value": str(value),
+                     "on": on}
+        if loc is not None:
+            datapoint["loc"] = loc
+        self.unsent_data.append(datapoint)
+
+    def submit_data(self, on=None):
+        """Submit data.
+
+        Data needs to be added using the add_datapoint method before.
+
+        Args:
+        ----------
+        on (optional): Timestamp in milliseconds, if this is omitted,
+        current time will be used instead.
+        """
+        if on is None:
+            on = int(time.time()*1000)
+        payload = {"on": on,
+                   "accountId": self.domain_id,
+                   "data": self.unsent_data}
+
+        # If there is an account, we can POST to device URL
+        if self.auth_as is None:
+            url = self.url
+        # Otherwise we need to use the alternative /data/.* URL
+        else:
+            url = "/data/{}".format(self.device_id)
+
+        self.client.post(url, data=payload, authorize_as=self.auth_as,
+                         expect=201)
+        self.unsent_data = []
