@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Intel Corporation
+# Copyright (c) 2017-2018, Intel Corporation
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -30,3 +30,4 @@
 from iotkitclient.account import Account
 from iotkitclient.client import Client, OICException
 from iotkitclient.device import Device
+from iotkitclient.data_query import DataQuery

@@ -26,6 +26,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """Methods for IoT Analytics account management."""
 
+from iotkitclient.data_query import DataQuery, QueryResponse
 from iotkitclient.device import Device
 
 
@@ -241,3 +242,18 @@ class Account(object):
         endpoint = self.url + "/cmpcatalog/{}".format(component_type_id)
         resp = self.client.get(endpoint, expect=200)
         return resp.json()
+
+    def search_data(self, query):
+        """Search for data accessible to the account.
+
+        Args:
+        ----------
+        query: An iotkitclient.DataQuery object or a json dictionary.
+        """
+        if isinstance(query, DataQuery):
+            payload = query.json()
+        else:
+            payload = query
+        endpoint = self.url + "/data/search/advanced"
+        json_dict = self.client.post(endpoint, data=payload, expect=200).json()
+        return QueryResponse(self, json_dict)

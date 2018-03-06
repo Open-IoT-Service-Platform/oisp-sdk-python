@@ -229,7 +229,7 @@ class Device(object):
         resp = self.client.get(self.url, authorize_as=self.auth_as, expect=200)
         self._update_with_json(resp.json())
 
-    def add_datapoint(self, component_id, value, on=None, loc=None):
+    def add_sample(self, component_id, value, on=None, loc=None):
         """Add a single datapoint.
 
         Use the submit_data method to send data to the
@@ -245,7 +245,7 @@ class Device(object):
         was recorded.
         """
         if on is None:
-            on = int(time.time()*1000)
+            on = int(time.time()*10e6)
         datapoint = {"componentId": component_id,
                      "value": str(value),
                      "on": on}
@@ -264,7 +264,7 @@ class Device(object):
         current time will be used instead.
         """
         if on is None:
-            on = int(time.time()*1000)
+            on = int(time.time()*10e6)
         payload = {"on": on,
                    "accountId": self.domain_id,
                    "data": self.unsent_data}
