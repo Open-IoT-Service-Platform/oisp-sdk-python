@@ -25,9 +25,12 @@
 
 """Modify and use this file to create a debug scenario."""
 
+import time
 import os
 
 import iotkitclient
+from iotkitclient.utils import pretty_print
+
 import config
 import pdb
 
@@ -56,15 +59,25 @@ try:
     device2 = account.create_device("did2", "dname2", "gwid")
     token = device.activate()
     resp = device.add_component("temp1", "temperature.v1.0")
+    cid = resp["cid"]
     device_id = device.device_id
     with open("dtoken", "w") as f:
         f.write(";".join([token, device.device_id]))
+
 except iotkitclient.OICException:
     with open("dtoken", "r") as f:
         token, device_id = f.read().split(";")
     device = client.get_device(token, device_id)
+    cid = device.components[0]["cid"]
 
-cid = device.components[0]["cid"]
+device.add_sample(cid, 10)
+time.sleep(.5)
+device.add_sample(cid, 15)
+time.sleep(.5)
+device.add_sample(cid, 20, loc=(0,0))
+device.submit_data()
 
+query = iotkitclient.DataQuery()
+response = account.search_data(query)
 
 pdb.set_trace()

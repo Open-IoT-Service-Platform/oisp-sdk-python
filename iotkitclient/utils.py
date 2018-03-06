@@ -30,6 +30,7 @@
 These methods are meant to be used within the module.
 """
 
+import json
 import re
 
 
@@ -50,3 +51,8 @@ def underscore_to_camel(underscore_str):
     """
     return ''.join(w.title() if i else w
                    for i, w in enumerate(underscore_str.split('_')))
+
+
+def pretty_print(json_dict):
+    """Pretty print a JSON dictionary."""
+    print(json.dumps(json_dict, indent=4))
