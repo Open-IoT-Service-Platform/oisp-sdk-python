@@ -29,8 +29,9 @@
 api_url = "http://localhost/v1/api"
 proxies = None
 
-# dashboard container name
-dashboard_container = "platformlauncher_dashboard_1"
+# container names
+dashboard_cont = "platformlauncher_dashboard_1"
+postgres_cont = "platformlauncher_postgres_1"
 
 # user account to use
 username = "testuser"

@@ -28,32 +28,51 @@
 import os
 
 import unittest
-import test.config as config
+import warnings
 
+import docker
+
+import test.config as config
 from iotkitclient import Client
+
 
 USERNAME = "testuser"
 PASSWORD = "P@ssw0rd"
 ROLE = "admin"
+
+TABLES_QUERY = ("""psql -U postgres -d iot -t -c "SELECT table_name FROM
+information_schema.tables WHERE table_type='BASE TABLE' AND
+table_schema='dashboard' AND table_name <> 'user_accounts';" """)
+TRUNCATE_QUERY = """psql -U postgres -d iot -t -c 'TRUNCATE {} CASCADE;' """
 
 
 class BaseCase(unittest.TestCase):
     """ Test case that creates a connection to server as
         configured in config.py in test directory. """
 
+    docker_client = docker.from_env()
+    postgres_container = docker_client.containers.get(config.postgres_cont)
+    dashboard_container = docker_client.containers.get(config.dashboard_cont)
+
     def setUp(self):
         self.client = Client(config.api_url)
         self.client.auth(config.username, config.password)
+        # Supress unclosed socket warnings from docker
+        warnings.filterwarnings("ignore", category=ResourceWarning,
+                                message=".*/var/run/docker.sock.*")
 
     def tearDown(self):
-        print("Resetting DB")
-        os.system("docker exec -it {} node /app/admin "
-                  "resetDB &> /dev/null".format(config.dashboard_container))
-        os.system("docker exec -it {} node /app/admin addUser {} {} {} "
-                  "&> /dev/null".format(config.dashboard_container,
-                                        config.username,
-                                        config.password,
-                                        config.role))
+        code, out = BaseCase.postgres_container.exec_run(TABLES_QUERY)
+        out = out.decode("utf-8").split()
+        tables = ", ".join(['dashboard."{}"'.format(o) for o in out if o])
+        code, out = BaseCase.postgres_container.exec_run(
+            TRUNCATE_QUERY.format(tables))
+        assert code == 0, "Failed to clear database: {}".format(out)
+        code, out = BaseCase.dashboard_container.exec_run("""
+        node /app/admin addUser {} {} {} """.format(config.username,
+                                                    config.password,
+                                                    config.role))
+        assert code == 0, "Failed to recreate user: {}".format(out)
 
 
 class BaseCaseWithAccount(BaseCase):
@@ -64,3 +83,9 @@ class BaseCaseWithAccount(BaseCase):
         self.account = self.client.create_account(config.accountname)
         # Reauth to access new Account
         self.client.auth(config.username, config.password)
+        self.account.create_component_type(dimension="temperature",
+                                           version="1.0", ctype="sensor",
+                                           data_type="Number",
+                                           data_format="float",
+                                           measure_unit="Degrees Celcius",
+                                           display="timeSeries")

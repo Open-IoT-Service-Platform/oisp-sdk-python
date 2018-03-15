@@ -30,12 +30,7 @@ PASSWORD = "P@ssw0rd"
 ROLE = "admin"
 
 
-test: install lint-light
-	@$(call msg,"Resetting database ...")
-	@$(docker exec -it platformlauncher_dashboard_1 node /app/admin resetDB)
-
-	@$(call msg,"Adding a user for testing ...")
-	@$(docker exec -it platformlauncher_dashboard_1 node /app/admin addUser $(USERNAME) $(PASSWORD) $(ROLE))
+test: install lint-light reset-db
 	@$(call msg,"Starting Integrity Tests ...")
 	python -m unittest
 
@@ -68,6 +63,13 @@ install: .install
 	@$(call msg,"Installing dependencies ...");
 	sudo pip install -r requirements.txt
 	@touch $@
+
+reset-db:
+	@$(call msg,"Resetting database ...");
+	docker exec -it platformlauncher_dashboard_1 node /app/admin resetDB;
+
+	@$(call msg,"Adding a user for testing ...");
+	docker exec -it platformlauncher_dashboard_1 node /app/admin addUser $(USERNAME) $(PASSWORD) $(ROLE);
 
 enter-debug: .install
 	cd samples && python enter_pdb.py;
