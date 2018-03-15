@@ -31,6 +31,7 @@ These methods are meant to be used within the module.
 """
 
 import json
+import time
 import re
 
 
@@ -56,3 +57,14 @@ def underscore_to_camel(underscore_str):
 def pretty_print(json_dict):
     """Pretty print a JSON dictionary."""
     print(json.dumps(json_dict, indent=4))
+
+
+def timestamp_in_ms(dt=None, dtype=int):
+    """Convert given datetime into UNIX timestamp.
+
+    If dt is None, current time will be used.
+    dtype is the datatype returned (int or float).
+    """
+    # time.mktime returns value in seconds.
+    in_ms = time.mktime(dt.from_.timetuple())*1e3
+    return dtype(in_ms)

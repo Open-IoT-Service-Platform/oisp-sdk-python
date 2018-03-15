@@ -28,10 +28,9 @@
 """Tools for building search queries."""
 
 import datetime
-import time
 
 from iotkitclient.device import Device
-from iotkitclient.utils import underscore_to_camel
+from iotkitclient.utils import underscore_to_camel, timestamp_in_ms
 
 
 # pylint: disable=too-few-public-methods
@@ -85,15 +84,11 @@ class DataQuery(object):
                         for k, v in self.__dict__.items()
                         if k in DataQuery.__VALID_PARAMS and v is not None}
 
-        # Multipication with 1e6 is necessary as the service uses microseconds
-        # and time uses seconds.
         if isinstance(self.from_, datetime.datetime):
-            payload_dict["from"] = int(time.mktime(
-                self.from_.timetuple())*10e6)
+            payload_dict["from"] = timestamp_in_ms(self.from_)
 
         if isinstance(self.to, datetime.datetime):
-            payload_dict["to"] = int(time.mktime(self.to.timetuple())*10e6)
-
+            payload_dict["to"] = timestamp_in_ms(self.to)
         # instead of device_ids device objects can be used
         for i, dev in enumerate(payload_dict.get("device_ids", [])):
             if isinstance(dev, Device):
@@ -126,10 +121,9 @@ class QueryResponse(object):
         assert account.account_id == json_dict.get("accountId"), """
         Account ID mismatch."""
 
-        # Division by 10e6, as datetime expects seconds and the service
-        # provides microseconds
-        start_ts = json_dict.get("startTimestamp") / 10e6
-        end_ts = json_dict.get("endTimestamp") / 10e6
+        # datetime uses timestamps in seconds, the service in ms
+        start_ts = json_dict.get("startTimestamp") / 1e3
+        end_ts = json_dict.get("endTimestamp") / 1e3
         self.start_time = datetime.datetime.fromtimestamp(start_ts)
         self.end_time = datetime.datetime.fromtimestamp(end_ts)
 
@@ -150,7 +144,8 @@ class QueryResponse(object):
                     value = sample_list[val_i]
                     if date_type == QueryResponse.DATATYPE_NUMBER:
                         value = float(value)
-                    timestamp = float(timestamp)/10e6
+                    # datetime uses timestamps in seconds, the service in ms
+                    timestamp = float(timestamp)/1e3
                     on = datetime.datetime.fromtimestamp(timestamp)
                     sample = Sample(self, device_id, component_id, value, on)
                     self.samples.append(sample)
