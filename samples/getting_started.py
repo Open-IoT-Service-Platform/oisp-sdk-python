@@ -23,7 +23,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import iotkitclient
+import oisp
 
 # Make sure to run python setup.py install before you begin
 
@@ -38,7 +38,7 @@ import config
 print("Connecting to {} ...".format(config.api_url))
 
 # All requests to host are managed by the Client class
-client = iotkitclient.Client(api_root=config.api_url, proxies=config.proxies)
+client = oisp.Client(api_root=config.api_url, proxies=config.proxies)
 
 # Authenticate by a username and a password. Currently, you can not create
 # a user with the Python API, use the dashboard to get started

@@ -23,12 +23,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import iotkitclient
+import oisp
 import config
 
 # Connect to IoT Analytics site and authenticate
 print("Connecting to {} ...".format(config.api_url))
-client = iotkitclient.Client(api_root=config.api_url, proxies=config.proxies)
+client = oisp.Client(api_root=config.api_url, proxies=config.proxies)
 client.auth(config.username, config.password)
 print("Connected. User ID: {}".format(client.user_id))
 

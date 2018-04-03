@@ -29,33 +29,30 @@ import unittest
 import test.config as config
 from test.basecase import BaseCase
 
-import iotkitclient
+import oisp
 
 
 class AuthTestCase(unittest.TestCase):
 
     def test_connection(self):
-        client = iotkitclient.Client(config.api_url,
-                                     proxies=config.proxies)
+        client = oisp.Client(config.api_url, proxies=config.proxies)
 
     def test_auth_fail(self):
         wrong_password = "wrong_password"
-        client = iotkitclient.Client(config.api_url,
-                                     proxies=config.proxies)
+        client = oisp.Client(config.api_url, proxies=config.proxies)
 
         try:
             client.auth(config.username, wrong_password)
             login_sucessful_with_wrong_password = True
-        except iotkitclient.client.OICException as e:
+        except oisp.client.OICException as e:
             self.assertEqual(e.code,
-                             iotkitclient.client.OICException.NOT_AUTHORIZED)
+                             oisp.client.OICException.NOT_AUTHORIZED)
             login_sucessful_with_wrong_password = False
 
         self.assertFalse(login_sucessful_with_wrong_password)
 
     def test_auth_success(self):
-        client = iotkitclient.Client(config.api_url,
-                                     proxies=config.proxies)
+        client = oisp.Client(config.api_url, proxies=config.proxies)
         client.auth(config.username, config.password)
 
 

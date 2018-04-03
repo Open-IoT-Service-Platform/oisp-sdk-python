@@ -28,8 +28,8 @@
 import time
 import os
 
-import iotkitclient
-from iotkitclient.utils import pretty_print
+import oisp
+from oisp.utils import pretty_print
 
 import config
 import pdb
@@ -46,7 +46,7 @@ if reset_db:
                                     config.password,
                                     config.role))
 
-client = iotkitclient.Client(api_root=config.api_url, proxies=config.proxies)
+client = oisp.Client(api_root=config.api_url, proxies=config.proxies)
 client.auth(config.username, config.password)
 
 try:
@@ -61,7 +61,7 @@ try:
     token = device.activate()
     try:
         resp = device.add_component("temp1", "temperature.v1.0")
-    except iotkitclient.OICException:
+    except oisp.OICException:
         account.create_component_type(dimension="temperature",
                                       version="1.0", ctype="sensor",
                                       data_type="Number",
@@ -75,7 +75,7 @@ try:
     with open("/tmp/oisp_dtoken", "w") as f:
         f.write(";".join([token, device.device_id]))
 
-except iotkitclient.OICException:
+except oisp.OICException:
     with open("/tmp/oisp_dtoken", "r") as f:
         token, device_id = f.read().split(";")
     device = client.get_device(token, device_id)
@@ -88,7 +88,7 @@ time.sleep(.5)
 device.add_sample(cid, 20, loc=(0,0))
 device.submit_data()
 
-query = iotkitclient.DataQuery()
+query = oisp.DataQuery()
 response = account.search_data(query)
 
 pdb.set_trace()

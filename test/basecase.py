@@ -33,7 +33,7 @@ import warnings
 import docker
 
 import test.config as config
-from iotkitclient import Client
+from oisp import Client
 
 
 USERNAME = "testuser"

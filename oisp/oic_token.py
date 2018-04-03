@@ -30,7 +30,7 @@ from datetime import datetime
 
 import dateutil.parser
 
-from iotkitclient.account import Account
+from oisp.account import Account
 
 # pylint: disable=too-many-instance-attributes
 # An attribute is required for every json field

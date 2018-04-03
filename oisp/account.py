@@ -26,8 +26,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """Methods for IoT Analytics account management."""
 
-from iotkitclient.data_query import DataQuery, QueryResponse
-from iotkitclient.device import Device
+from oisp.data_query import DataQuery, QueryResponse
+from oisp.device import Device
 
 
 # pylint: disable=too-many-instance-attributes
@@ -248,7 +248,7 @@ class Account(object):
 
         Args:
         ----------
-        query: An iotkitclient.DataQuery object or a json dictionary.
+        query: An oisp.DataQuery object or a json dictionary.
         """
         if isinstance(query, DataQuery):
             payload = query.json()

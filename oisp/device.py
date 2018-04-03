@@ -30,7 +30,7 @@ import time
 from datetime import datetime
 import uuid
 
-from iotkitclient.utils import camel_to_underscore, underscore_to_camel
+from oisp.utils import camel_to_underscore, underscore_to_camel
 
 
 # pylint: disable=too-many-instance-attributes

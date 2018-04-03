@@ -29,8 +29,6 @@ import unittest
 import test.config as config
 from test.basecase import BaseCaseWithAccount
 
-import iotkitclient
-
 
 class GetCreateDeviceTestCase(BaseCaseWithAccount):
 

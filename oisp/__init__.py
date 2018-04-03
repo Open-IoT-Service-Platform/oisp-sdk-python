@@ -27,7 +27,7 @@
 
 """Python API for connection to Open IOT Connector REST API."""
 
-from iotkitclient.account import Account
-from iotkitclient.client import Client, OICException
-from iotkitclient.device import Device
-from iotkitclient.data_query import DataQuery
+from oisp.account import Account
+from oisp.client import Client, OICException
+from oisp.device import Device
+from oisp.data_query import DataQuery

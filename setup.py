@@ -27,7 +27,7 @@
 
 from distutils.core import setup
 
-setup(name='iotkitclient',
+setup(name='oisp',
     version='0.1',
-    packages=['iotkitclient'],
+    packages=['oisp'],
     )

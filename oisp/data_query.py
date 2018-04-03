@@ -29,8 +29,8 @@
 
 import datetime
 
-from iotkitclient.device import Device
-from iotkitclient.utils import underscore_to_camel, timestamp_in_ms
+from oisp.device import Device
+from oisp.utils import underscore_to_camel, timestamp_in_ms
 
 
 # pylint: disable=too-few-public-methods

@@ -29,7 +29,7 @@ import unittest
 import test.config as config
 from test.basecase import BaseCaseWithAccount
 
-from iotkitclient import Device, OICException
+from oisp import Device, OICException
 
 
 class DeviceTestCase(BaseCaseWithAccount):

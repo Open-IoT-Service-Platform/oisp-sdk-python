@@ -35,26 +35,26 @@ test: install lint-light reset-db
 	python -m unittest
 
 format-files: .install-deps
-	@$(call msg,"Autoformatting .py files in iotkitclient ...");
-	autopep8 iotkitclient/*.py --in-place
-	docformatter --in-place iotkitclient/*.py
+	@$(call msg,"Autoformatting .py files in oisp ...");
+	autopep8 oisp/*.py --in-place
+	docformatter --in-place oisp/*.py
 
 lint-light:
 	@$(call msg,"Running linters (light) ...");
-	pylint --disable=fixme --score=n iotkitclient
-	pycodestyle iotkitclient
+	pylint --disable=fixme --score=n oisp
+	pycodestyle oisp
 	pycodestyle test
 
 lint:
 	@$(call msg,"Running linters (full) ...");
-	pylint iotkitclient --score=n
-	pycodestyle iotkitclient
+	pylint oisp --score=n
+	pycodestyle oisp
 	pycodestyle test
-	pydocstyle iotkitclient --add-ignore=D105
+	pydocstyle oisp --add-ignore=D105
 
 install: .install
 
-.install: .install-deps  $(shell find iotkitclient -type f)
+.install: .install-deps  $(shell find oisp -type f)
 	@$(call msg,"Installing project ...");
 	sudo python setup.py install
 	@touch $@

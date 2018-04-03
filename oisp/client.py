@@ -30,10 +30,10 @@ import json
 
 import requests
 
-from iotkitclient.account import Account
-from iotkitclient.device import Device
-from iotkitclient.oic_token import UserToken
-from iotkitclient.oic_user import User
+from oisp.account import Account
+from oisp.device import Device
+from oisp.oic_token import UserToken
+from oisp.oic_user import User
 
 
 class AuthenticationError(Exception):
