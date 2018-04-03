@@ -54,18 +54,29 @@ try:
 except IndexError:
     account = client.create_account("debug_account")
 
+
 try:
     device = account.create_device("did", "dname", "gwid")
     device2 = account.create_device("did2", "dname2", "gwid")
     token = device.activate()
-    resp = device.add_component("temp1", "temperature.v1.0")
+    try:
+        resp = device.add_component("temp1", "temperature.v1.0")
+    except iotkitclient.OICException:
+        account.create_component_type(dimension="temperature",
+                                      version="1.0", ctype="sensor",
+                                      data_type="Number",
+                                      data_format="float",
+                                      measure_unit="Degrees Celcius",
+                                      display="timeSeries")
+        resp = device.add_component("temp1", "temperature.v1.0")
+
     cid = resp["cid"]
     device_id = device.device_id
-    with open("dtoken", "w") as f:
+    with open("/tmp/oisp_dtoken", "w") as f:
         f.write(";".join([token, device.device_id]))
 
 except iotkitclient.OICException:
-    with open("dtoken", "r") as f:
+    with open("/tmp/oisp_dtoken", "r") as f:
         token, device_id = f.read().split(";")
     device = client.get_device(token, device_id)
     cid = device.components[0]["cid"]

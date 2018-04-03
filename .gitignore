@@ -1,0 +1,10 @@
+# Bytecode
+*.py[cod]
+*__pycache__/
+
+
+# Dist and makefile
+.install
+.install-deps
+build/
+

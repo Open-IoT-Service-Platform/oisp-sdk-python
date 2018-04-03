@@ -209,9 +209,9 @@ class Client(object):
                 raise AuthenticationError("You need to authenticate using "
                                           "the auth method first, or authorize"
                                           "as a device")
-            """if self.user_token.is_expired():
-                raise AuthenticationError("UserToken expired, you need to use "
-                                          "the auth method again.")"""
+            # if self.user_token.is_expired():
+            #   raise AuthenticationError("UserToken expired, you need to use "
+            #                             "the auth method again.")"""
             token = self.user_token.value
         else:
             assert isinstance(authorize_as, Device), """You can only authorize as
