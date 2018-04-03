@@ -2,3 +2,4 @@ dateutils
 requests
 docformatter
 docker
+setuptools

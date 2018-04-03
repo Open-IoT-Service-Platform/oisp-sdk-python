@@ -7,4 +7,5 @@
 .install
 .install-deps
 build/
-
+dist/
+oisp.egg-info/

@@ -25,9 +25,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from distutils.core import setup
+from setuptools import setup
 
 setup(name='oisp',
-    version='0.1',
-    packages=['oisp'],
-    )
+      version='0.1.0',
+      packages=['oisp'],
+      description="An object oriented API for Open IoT Service Platform",
+      url="https://github.com/Open-IoT-Service-Platform/oisp-sdk-python",
+      author="Ali Rasim Kocal",
+      author_email="ali.r.kocal@intel.com",
+      license="BSD-3-Clause",
+      classifiers=["Intended Audience :: Developers",
+                   "Topic :: Software Development :: Libraries",
+                   "License :: OSI Approved :: BSD License",
+                   "Programming Language :: Python :: 2",
+                   "Programming Language :: Python :: 3",
+                  ],
+      keywords="iot oisp development platform sdk rest",
+      project_urls={"Source":"https://github.com/Open-IoT-Service-Platform/oisp-sdk-python",
+                    "OISP Main":"https://github.com/Open-IoT-Service-Platform/oisp-sdk-python"},
+      install_requires=["dateutils", "requests"])
