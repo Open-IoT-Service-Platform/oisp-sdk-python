@@ -32,7 +32,10 @@ import oisp
 from oisp.utils import pretty_print
 
 import config
-import pdb
+try:
+    import ipdb as pdb
+except ImportError:
+    import pdb
 
 reset_db = False # True
 
@@ -85,7 +88,8 @@ device.add_sample(cid, 10)
 time.sleep(.5)
 device.add_sample(cid, 15)
 time.sleep(.5)
-device.add_sample(cid, 20, loc=(0,0))
+device.add_sample(cid, 20, loc=(0, 0))
+pdb.set_trace()
 device.submit_data()
 
 query = oisp.DataQuery()

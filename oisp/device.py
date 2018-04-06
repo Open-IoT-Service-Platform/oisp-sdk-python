@@ -26,11 +26,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """Methods for IoT Analytics device management and data submission."""
 
-import time
 from datetime import datetime
 import uuid
 
-from oisp.utils import camel_to_underscore, underscore_to_camel
+from oisp.utils import (camel_to_underscore, underscore_to_camel,
+                        timestamp_in_ms)
 
 
 # pylint: disable=too-many-instance-attributes
@@ -176,7 +176,8 @@ class Device(object):
             assert self.account.account_id == account_id, """Account ID does not
             match activation code"""
         self.domain_id = account_id
-        return response.json().get("deviceToken")
+        self.device_token = response.json().get("deviceToken")
+        return self.device_token
 
     # pylint: disable=unused-argument
     # The arguments are accesses through locals()
@@ -245,7 +246,7 @@ class Device(object):
         was recorded.
         """
         if on is None:
-            on = int(time.time()*10e6)
+            on = timestamp_in_ms()
         datapoint = {"componentId": component_id,
                      "value": str(value),
                      "on": on}
@@ -263,15 +264,15 @@ class Device(object):
         on (optional): Timestamp in milliseconds, if this is omitted,
         current time will be used instead.
         """
-        if on is None:
-            on = int(time.time()*10e6)
-        payload = {"on": on,
+        payload = {"on": timestamp_in_ms(on),
                    "accountId": self.domain_id,
                    "data": self.unsent_data}
 
         # If there is an account, we can POST to device URL
         if self.auth_as is None:
             url = self.url
+            raise Warning("""Submitting data without account token is """
+                          """currently not supported.""")
         # Otherwise we need to use the alternative /data/.* URL
         else:
             url = "/data/{}".format(self.device_id)

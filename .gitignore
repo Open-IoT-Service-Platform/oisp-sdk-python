@@ -9,3 +9,7 @@
 build/
 dist/
 oisp.egg-info/
+
+# Coverage
+.coverage
+htmlcov/

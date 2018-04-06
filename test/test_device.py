@@ -37,7 +37,7 @@ class DeviceTestCase(BaseCaseWithAccount):
     def test_activate_device(self):
         device = self.account.create_device("device_id", "device_name")
         self.assertEqual(device.status, Device.STATUS_CREATED)
-        token = device.activate()
+        device.activate()
         # Get device again to update properities
         device = self.account.get_device(device.device_id)
         self.assertEqual(device.status, Device.STATUS_ACTIVE)
@@ -48,10 +48,10 @@ class DeviceTestCase(BaseCaseWithAccount):
         device.delete()
         self.assertEqual(len(self.account.get_devices()), 0)
 
+        can_delete_twice = True
         try:
             # Now it should fail
             device.delete()
-            can_delete_twice = True
         except OICException as e:
             self.assertEqual(e.code, 1404)
             can_delete_twice = False
@@ -60,7 +60,7 @@ class DeviceTestCase(BaseCaseWithAccount):
 
     def test_add_remove_component(self):
         device = self.account.create_device("device_id", "device_name")
-        token = device.activate()
+        device.activate()
         resp = device.add_component("temp1", "temperature.v1.0")
         # method does not update components automatically
         device_updated = self.account.get_device("device_id")
@@ -91,3 +91,32 @@ class DeviceTestCase(BaseCaseWithAccount):
 
         self.assertCountEqual(device0.components, device1.components)
         self.assertCountEqual(device1.attributes, test_attributes)
+
+    def test_submit_data_with_device_token(self):
+        device = self.account.create_device("device_id", "device_name")
+        token = device.activate()
+        device = self.client.get_device(token, device.device_id)
+        resp = device.add_component("temp1", "temperature.v1.0")
+        cid = resp["cid"]
+        device.add_sample(cid, 10)
+        device.submit_data()
+
+    def test_submit_data_with_user_token(self):
+        device = self.account.create_device("device_id", "device_name")
+        device.activate()
+        resp = device.add_component("temp1", "temperature.v1.0")
+        cid = resp["cid"]
+
+        # Refind device to lose device token
+        for d in self.account.get_devices():
+            if d.device_id == "device_id":
+                device = d
+                break
+
+        device.add_sample(cid, 10)
+        try:
+            device.submit_data()
+        except Warning:
+            return
+
+        raise Exception("submit_data with user token should fail [6th Apr 18]")
