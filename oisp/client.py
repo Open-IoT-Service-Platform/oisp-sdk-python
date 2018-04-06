@@ -27,13 +27,20 @@
 """Methods for IoT Analytics Cloud connections."""
 
 import json
+import logging
 
+from termcolor import colored
 import requests
 
 from oisp.account import Account
 from oisp.device import Device
 from oisp.oic_token import UserToken
 from oisp.oic_user import User
+from oisp.utils import pretty_dumps
+
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.INFO)
 
 
 class AuthenticationError(Exception):
@@ -368,13 +375,29 @@ class Client(object):
         proxies = kwargs.pop("proxies", self.proxies)
         verify = kwargs.pop("verify", self.verify_certs)
 
+        url = self.base_url + endpoint
+        logger.debug("%s: %s", colored(request_func.__name__.upper(), "green"),
+                     url)
+        if "data" in kwargs:
+            logger.debug("%s \n%s", colored("Payload:", attrs=["bold"]),
+                         pretty_dumps(kwargs["data"]))
+
         if "data" in kwargs and isinstance(kwargs.get("data"), dict):
             kwargs["data"] = json.dumps(kwargs["data"])
-
-        url = self.base_url + endpoint
         resp = request_func(url, headers=headers, proxies=proxies,
                             verify=verify, *args, **kwargs)
+
         self.response = resp
+
+        try:
+            resp_json = resp.json()
+        except ValueError:
+            resp_json = None
+
+        logger.debug("%s %s \n %s \n",
+                     colored("Response:", attrs=["bold"]),
+                     resp.status_code, pretty_dumps(resp_json))
+
         if expect and (resp.status_code != expect):
             raise OICException(expect, resp)
         return resp

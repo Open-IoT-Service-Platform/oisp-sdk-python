@@ -27,42 +27,13 @@
 
 import unittest
 import test.config as config
-from test.basecase import BaseCase
-
-import oisp
+from test.basecase import BaseCaseWithAccount
 
 
-class AuthTestCase(unittest.TestCase):
+class GetCreateDeviceTestCase(BaseCaseWithAccount):
 
-    def test_connection(self):
-        client = oisp.Client(config.api_url, proxies=config.proxies)
-
-    def test_auth_fail(self):
-        wrong_password = "wrong_password"
-        client = oisp.Client(config.api_url, proxies=config.proxies)
-
-        login_sucessful_with_wrong_password = True
-        try:
-            client.auth(config.username, wrong_password)
-        except oisp.client.OICException as e:
-            self.assertEqual(e.code,
-                             oisp.client.OICException.NOT_AUTHORIZED)
-            login_sucessful_with_wrong_password = False
-
-        self.assertFalse(login_sucessful_with_wrong_password)
-
-    def test_auth_success(self):
-        client = oisp.Client(config.api_url, proxies=config.proxies)
-        client.auth(config.username, config.password)
-
-
-class GetCreateAccountTestCase(BaseCase):
-
-    def test_get_create_account(self):
-        accounts = self.client.get_accounts()
-        self.assertEqual(accounts, [])
-        account = self.client.create_account("test_account")
-        # Reauth to access new Account
-        self.client.auth(config.username, config.password)
-        accounts = self.client.get_accounts()
-        self.assertEqual(accounts, [account])
+    def test_user_attributes(self):
+        user = self.client.get_user()
+        # E-mail adress is used as username
+        self.assertEqual(user.email, config.username)
+        self.assertEqual(user.tc_accepted, True)

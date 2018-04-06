@@ -32,7 +32,8 @@ ROLE = "admin"
 
 test: install lint-light reset-db
 	@$(call msg,"Starting Integrity Tests ...")
-	python -m unittest
+	coverage run -m unittest
+	coverage report -m
 
 format-files: .install-deps
 	@$(call msg,"Autoformatting .py files in oisp ...");

@@ -34,6 +34,8 @@ import json
 import time
 import re
 
+from pygments import highlight, lexers, formatters
+
 
 def camel_to_underscore(camel_str):
     """Convert a camelCase string to underscore_notation.
@@ -54,9 +56,19 @@ def underscore_to_camel(underscore_str):
                    for i, w in enumerate(underscore_str.split('_')))
 
 
+def pretty_dumps(json_dict):
+    """Format a json dictionary to a colorful and indented string."""
+    if json_dict is None:
+        return "None"
+    formatted_json = json.dumps(json_dict, indent=4)
+    return highlight(formatted_json,
+                     lexers.find_lexer_class_by_name("JSON")(),
+                     formatters.find_formatter_class("terminal")())
+
+
 def pretty_print(json_dict):
     """Pretty print a JSON dictionary."""
-    print(json.dumps(json_dict, indent=4))
+    print(pretty_dumps(json_dict))
 
 
 def timestamp_in_ms(dt=None, dtype=int):
@@ -65,6 +77,8 @@ def timestamp_in_ms(dt=None, dtype=int):
     If dt is None, current time will be used.
     dtype is the datatype returned (int or float).
     """
-    # time.mktime returns value in seconds.
-    in_ms = time.mktime(dt.from_.timetuple())*1e3
+    if dt is None:
+        in_ms = time.time()*1e3
+    else:
+        in_ms = time.mktime(dt.timetuple())*1e3
     return dtype(in_ms)

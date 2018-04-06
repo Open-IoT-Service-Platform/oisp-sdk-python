@@ -25,11 +25,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from setuptools import setup
+from distutils.core import setup
+#from setuptools import setup
 
 setup(name='oisp',
       version='0.1.0',
-      packages=['oisp'],
+      #packages=['oisp'],
+      package_dir={"oisp":"oisp"},
       description="An object oriented API for Open IoT Service Platform",
       url="https://github.com/Open-IoT-Service-Platform/oisp-sdk-python",
       author="Ali Rasim Kocal",
