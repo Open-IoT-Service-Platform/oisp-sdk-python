@@ -39,7 +39,7 @@ from oisp.oic_user import User
 from oisp.utils import pretty_dumps
 
 logger = logging.getLogger(__name__)
-logger.addHandler(logging.StreamHandler())
+logger.addHandler(logging.NullHandler())
 logger.setLevel(logging.INFO)
 
 
@@ -173,7 +173,7 @@ class Client(object):
     """
 
     def __init__(self, api_root, proxies=None, verify_certs=True):
-        """Set up IOT Analytics Cloud connection.
+        """Set up connection.
 
         Args:
         ----------

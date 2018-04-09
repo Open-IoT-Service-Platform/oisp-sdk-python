@@ -25,8 +25,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import unittest
-import test.config as config
 from test.basecase import BaseCaseWithAccount
 
 from oisp import Device, OICException
@@ -57,6 +55,21 @@ class DeviceTestCase(BaseCaseWithAccount):
             can_delete_twice = False
 
         self.assertFalse(can_delete_twice)
+
+    def test_attributes_tags_loc(self):
+        attr = {"OS": "linux", "color": "blue"}
+        device = self.account.create_device("device_id", "device_name",
+                                            attributes=attr,
+                                            tags=["testtag0", "testtag1"],
+                                            loc=[0, 0])
+        self.assertDictEqual(attr, device.attributes)
+        attr["color"] = "red"
+        device.set_properties(attributes=attr)
+        self.assertDictEqual(attr, device.attributes)
+        device.update()
+        self.assertDictEqual(attr, device.attributes)
+        self.assertCountEqual(["testtag0", "testtag1"], device.tags)
+        self.assertEqual([0,0], device.loc)
 
     def test_add_remove_component(self):
         device = self.account.create_device("device_id", "device_name")

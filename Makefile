@@ -57,7 +57,7 @@ install: .install
 
 .install: .install-deps  $(shell find oisp -type f)
 	@$(call msg,"Installing project ...");
-	sudo python setup.py install
+	sudo python setup.py install --force
 	@touch $@
 
 .install-deps: requirements.txt
