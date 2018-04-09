@@ -1,5 +1,4 @@
-# iotkit-lib-python
-This library is based on the previous iotkit-lib-python project from 2015.
+# OISP Python SDK
 This library provides Python bindings to the [Open IoT Service Platform (OISP)](https://github.com/Open-IoT-Service-Platform).
 
 ## Installation
@@ -11,11 +10,20 @@ You can follow [these instructions](https://github.com/Open-IoT-Service-Platform
 
 ---
 
-1. Clone the iotkit-lib-python repository from GitHub
+If you only want to use the SDK, just run:
+```
+pip install oisp
+```
+
+### For SDK development
+
+If you want to develop the SDK, install using the git repository instead.
+
+1. Clone the oisp-sdk-python repository from GitHub
 2. Install the library:
 
 ``` bash
-cd iotkit-lib-python
+cd oisp-sdk-python
 make install
 ```
 
@@ -30,8 +38,8 @@ It is possible to create a user using the REST API as well, but you will still h
 Connection to the host is managed by the `Client` class. You need the URL for the API to create an instance.
 
 ``` python
-import iotkitclient
-client = iotkitclient.Client(api_root="http://localhost/v1/api/")
+import oisp
+client = oisp.Client(api_root="http://localhost/v1/api/")
 ```
 
 If you are connecting over proxies, you can specify those using the `proxies` parameter, see method documentation for `__init__` for details.
@@ -117,7 +125,7 @@ You need to build a query to search for data that belongs to an account. The str
 However, it is more convenient to use the `DataQuery` class. A query created without any parameters will return all data submitted so far. For details on query parameters see the documentation on this class.
 
 ``` python
-query = iotkitclient.DataQuery()
+query = oisp.DataQuery()
 response = account.search_data(query)
 ```
 
