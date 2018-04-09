@@ -49,8 +49,8 @@ class Device(object):
     # Argument match attributes as defined in the REST API
     def __init__(self, device_id, client=None, account=None, name=None,
                  status=None, gateway_id=None, domain_id=None,
-                 created=None, attributes=None, components=None,
-                 device_token=None):
+                 created=None, attributes=None, components=None, tags=None,
+                 loc=None, device_token=None):
         """Create a device object.
 
         This method does not create a device on host. For this, see
@@ -76,6 +76,8 @@ class Device(object):
         self.created = created
         self.attributes = attributes
         self.components = components
+        self.tags = tags
+        self.loc = loc
         self.device_token = device_token
 
         self.unsent_data = []

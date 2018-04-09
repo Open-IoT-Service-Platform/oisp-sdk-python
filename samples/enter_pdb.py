@@ -29,7 +29,6 @@ import time
 import os
 
 import oisp
-from oisp.utils import pretty_print
 
 import config
 try:
