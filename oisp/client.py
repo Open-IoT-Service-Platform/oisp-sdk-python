@@ -34,8 +34,8 @@ import requests
 
 from oisp.account import Account
 from oisp.device import Device
-from oisp.oic_token import UserToken
-from oisp.oic_user import User
+from oisp.oisp_token import UserToken
+from oisp.oisp_user import User
 from oisp.utils import pretty_dumps
 
 logger = logging.getLogger(__name__)

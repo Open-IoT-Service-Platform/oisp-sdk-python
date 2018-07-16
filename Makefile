@@ -33,9 +33,13 @@ PASSWORD = "P@ssw0rd"
 ROLE = "admin"
 
 
-test: install lint-light reset-db
+test: lint-light reset-db
 	@$(call msg,"Starting Integrity Tests ...")
-	coverage run -m unittest
+	virtualenv --no-site-packages venv_test;
+	( . venv_test/bin/activate; \
+	pip install coverage; \
+	coverage run --source oisp setup.py test; \
+	)
 	coverage report -m
 
 format-files: .install-deps
@@ -58,14 +62,9 @@ lint:
 
 install: .install
 
-.install: .install-deps  $(shell find oisp -type f)
+.install: $(shell find oisp -type f)
 	@$(call msg,"Installing project ...");
 	sudo python setup.py install --force
-	@touch $@
-
-.install-deps: requirements.txt
-	@$(call msg,"Installing dependencies ...");
-	sudo pip install -r requirements.txt
 	@touch $@
 
 reset-db:
