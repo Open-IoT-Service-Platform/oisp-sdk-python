@@ -32,7 +32,7 @@ from test.basecase import BaseCase
 import oisp
 
 
-class AuthTestCase(unittest.TestCase):
+class AuthTestCase(BaseCase):
 
     def test_connection(self):
         client = oisp.Client(config.api_url, proxies=config.proxies)

@@ -33,8 +33,8 @@ proxies = None
 dashboard_container = "platformlauncher_dashboard_1"
 
 # user account to use
-username = "testuser"
-password = "P@ssw0rd"
+username = "oisp@testing.com"
+password = "OispTesting1"
 role = "admin"
 
 # account data

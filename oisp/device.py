@@ -126,6 +126,8 @@ class Device(object):
         created = py_dict.get("created")
         if not isinstance(created, datetime) and created is not None:
             py_dict["created"] = datetime.fromtimestamp(created / 1e3)
+        if "loc" in py_dict:
+            py_dict["loc"] = list(map(int, py_dict["loc"]))
         self.__dict__.update(py_dict)
 
     @property
@@ -175,8 +177,8 @@ class Device(object):
         account_id = response.json().get("domainId")
 
         if self.account is not None:
-            assert self.account.account_id == account_id, """Account ID does not
-            match activation code"""
+            assert self.account.account_id == account_id, """Account ID does
+            not match activation code"""
         self.domain_id = account_id
         self.device_token = response.json().get("deviceToken")
         return self.device_token

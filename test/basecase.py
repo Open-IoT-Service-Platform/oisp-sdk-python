@@ -26,53 +26,51 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import os
-
 import unittest
 import warnings
 
 import docker
 
-import test.config as config
 from oisp import Client
+from . import config, utils
 
-
-USERNAME = "testuser"
-PASSWORD = "P@ssw0rd"
+USERNAME = "oisp@testing.com"
+PASSWORD = "OispTesting1"
 ROLE = "admin"
 
-TABLES_QUERY = ("""psql -U postgres -d iot -t -c "SELECT table_name FROM
-information_schema.tables WHERE table_type='BASE TABLE' AND
-table_schema='dashboard' AND table_name <> 'user_accounts';" """)
-TRUNCATE_QUERY = """psql -U postgres -d iot -t -c 'TRUNCATE {} CASCADE;' """
+MAKEFILE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                            os.pardir)
 
 
 class BaseCase(unittest.TestCase):
     """ Test case that creates a connection to server as
         configured in config.py in test directory. """
 
-    docker_client = docker.from_env()
-    postgres_container = docker_client.containers.get(config.postgres_cont)
-    dashboard_container = docker_client.containers.get(config.dashboard_cont)
+    config_path = "configs/base.yaml"
+
+    def __init__(self, *args, **kwargs):
+        super(BaseCase, self).__init__(*args, **kwargs)
+        self.config = utils.load_yaml_with_include(self.config_path)
+        self.docker_client = docker.from_env()
+        self.postgres_container = self.docker_client.containers.get(
+            self.config["locals"]["postgres_container"])
+        self.dashboard_container = self.docker_client.containers.get(
+            self.config["locals"]["dashboard_container"])
 
     def setUp(self):
-        self.client = Client(config.api_url)
-        self.client.auth(config.username, config.password)
         # Supress unclosed socket warnings from docker
         warnings.filterwarnings("ignore", category=ResourceWarning,
                                 message=".*/var/run/docker.sock.*")
 
+        user = self.config["setup"]["users"][0]
+        utils.add_user(self.dashboard_container, user["username"],
+                       user["password"], user["role"])
+
+        self.client = Client(self.config["setup"]["api_root"])
+        self.client.auth(user["username"], user["password"])
+
     def tearDown(self):
-        code, out = BaseCase.postgres_container.exec_run(TABLES_QUERY)
-        out = out.decode("utf-8").split()
-        tables = ", ".join(['dashboard."{}"'.format(o) for o in out if o])
-        code, out = BaseCase.postgres_container.exec_run(
-            TRUNCATE_QUERY.format(tables))
-        assert code == 0, "Failed to clear database: {}".format(out)
-        code, out = BaseCase.dashboard_container.exec_run("""
-        node /app/admin addUser {} {} {} """.format(config.username,
-                                                    config.password,
-                                                    config.role))
-        assert code == 0, "Failed to recreate user: {}".format(out)
+        utils.clear_db(self.postgres_container)
 
 
 class BaseCaseWithAccount(BaseCase):

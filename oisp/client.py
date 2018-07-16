@@ -207,7 +207,7 @@ class Client(object):
         If this is None (default), client will attempt user authorization.
 
         """
-        headers = {"content-type": "application/json"}
+        headers = {"Content-Type": "application/json"}
         if not authorize:
             return headers
 
@@ -221,8 +221,8 @@ class Client(object):
             #                             "the auth method again.")"""
             token = self.user_token.value
         else:
-            assert isinstance(authorize_as, Device), """You can only authorize as
-            Device, leave authorize_as empty for user authorization."""
+            assert isinstance(authorize_as, Device), """You can only authorize
+            as Device, leave authorize_as empty for user authorization."""
             token = authorize_as.device_token
 
         headers["Authorization"] = "Bearer " + token
