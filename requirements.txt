@@ -1,9 +1,0 @@
-dateutils
-requests
-docformatter
-docker
-setuptools
-termcolor
-pygments
-coverage
-flask
