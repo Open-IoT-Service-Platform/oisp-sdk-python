@@ -25,6 +25,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# PROJECT_NAME is used to find the containers, this should match
+# COMPOSE_PROJECT_NAME in platform-launcher
+PROJECT_NAME ?= "oisp"
 USERNAME = "testuser"
 PASSWORD = "P@ssw0rd"
 ROLE = "admin"
@@ -67,10 +70,7 @@ install: .install
 
 reset-db:
 	@$(call msg,"Resetting database ...");
-	docker exec -it platformlauncher_dashboard_1 node /app/admin resetDB;
-
-	@$(call msg,"Adding a user for testing ...");
-	docker exec -it platformlauncher_dashboard_1 node /app/admin addUser $(USERNAME) $(PASSWORD) $(ROLE);
+	docker exec -it $(PROJECT_NAME)_frontend_1 node /app/admin resetDB;
 
 enter-debug: .install
 	cd samples && python enter_pdb.py;

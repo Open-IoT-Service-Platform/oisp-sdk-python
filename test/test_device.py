@@ -69,7 +69,7 @@ class DeviceTestCase(BaseCaseWithAccount):
         device.update()
         self.assertDictEqual(attr, device.attributes)
         self.assertCountEqual(["testtag0", "testtag1"], device.tags)
-        self.assertEqual([0,0], device.loc)
+        self.assertEqual([0, 0], device.loc)
 
     def test_add_remove_component(self):
         device = self.account.create_device("device_id", "device_name")

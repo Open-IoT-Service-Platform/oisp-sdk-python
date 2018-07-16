@@ -24,19 +24,38 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import docker
 
 # IoT Analytics server info#
 api_url = "http://localhost/v1/api"
 proxies = None
 
-# container names
-dashboard_cont = "platformlauncher_dashboard_1"
-postgres_cont = "platformlauncher_postgres_1"
+# container names (leave None to try to autodetect)
+dashboard_cont = None
+postgres_cont = None
 
 # user account to use
-username = "testuser"
-password = "P@ssw0rd"
+username = "oisp@testing.com"
+password = "OispTesting1"
 role = "admin"
 
 # account data
 accountname = "testaccount"
+
+
+def _get_container_names_containing(string):
+    dc = docker.DockerClient()
+    return [c.name for c in dc.containers.list() if string in c.name]
+
+
+if dashboard_cont is None:
+    cont_names = _get_container_names_containing("frontend")
+    assert len(cont_names) == 1, "Could not autodetect container \
+    name (too many/few candidates)"
+    dashboard_cont = cont_names[0]
+
+if postgres_cont is None:
+    cont_names = _get_container_names_containing("postgres")
+    assert len(cont_names) == 1, "Could not autodetect container \
+    name (too many candidates)"
+    postgres_cont = cont_names[0]
