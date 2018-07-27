@@ -44,5 +44,5 @@ setup(name='oisp',
       keywords="iot oisp development platform sdk rest",
       project_urls={"Source":"https://github.com/Open-IoT-Service-Platform/oisp-sdk-python",
                     "OISP Main":"https://github.com/Open-IoT-Service-Platform/oisp-sdk-python"},
-      install_requires=["requests", "pygments", "termcolor", "dateutils"],
+      install_requires=["requests", "pygments", "termcolor"],
       tests_require=["docker", "pyyaml", "flask"])
