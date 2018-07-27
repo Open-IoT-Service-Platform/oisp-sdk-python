@@ -25,17 +25,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """Module for managing user and (future) device tokens."""
-
 from datetime import datetime
-
-import dateutil.parser
 
 from oisp.account import Account
 
+
 # pylint: disable=too-many-instance-attributes
 # An attribute is required for every json field
-
-
 class UserToken(object):
     """Store user token information."""
 
@@ -61,7 +57,7 @@ class UserToken(object):
         self.issued_by = issued_by
         self.user_id = user_id
         if not isinstance(expires_by, datetime):
-            expires_by = dateutil.parser.parse(expires_by)
+            expires_by = datetime.fromtimestamp(expires_by / 1e3)
         self.expires_by = expires_by
         if not accounts:
             accounts = []
