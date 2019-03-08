@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2018, Intel Corporation
+# Copyright (c) 2015-2019, Intel Corporation
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -29,6 +29,7 @@
 import json
 import logging
 
+import cbor
 from termcolor import colored
 import requests
 
@@ -51,8 +52,6 @@ class AuthenticationError(Exception):
     case of an authentication related exception
 
     """
-
-    pass
 
 
 class OICException(Exception):
@@ -163,7 +162,7 @@ class OICException(Exception):
         super(OICException, self).__init__(message)
 
 
-class Client(object):
+class Client:
     """IoT Analytics Cloud client class.
 
     Attributes:   proxies (str): proxy server used for connection
@@ -378,29 +377,38 @@ class Client(object):
         url = self.base_url + endpoint
         logger.debug("%s: %s", colored(request_func.__name__.upper(), "green"),
                      url)
-        if "data" in kwargs:
-            logger.debug("%s \n%s", colored("Payload:", attrs=["bold"]),
-                         pretty_dumps(kwargs["data"]))
 
         if "data" in kwargs and isinstance(kwargs.get("data"), dict):
-            kwargs["data"] = json.dumps(kwargs["data"])
-        resp = request_func(url, headers=headers, proxies=proxies,
-                            verify=verify, *args, **kwargs)
+            try:
+                logger.debug("%s \n%s", colored("Payload (JSON):",
+                                                attrs=["bold"]),
+                             pretty_dumps(kwargs["data"]))
+                kwargs["data"] = json.dumps(kwargs["data"])
+            # Not json serializable, try CBOR
+            except TypeError:
+                headers["Content-Type"] = "application/cbor"
+                logger.debug("%s \n%s", colored("Payload (CBOR):",
+                                                attrs=["bold"]),
+                             str(kwargs["data"]))
+                kwargs["data"] = cbor.dumps(kwargs["data"])
 
-        self.response = resp
+        self.response = request_func(url, headers=headers, proxies=proxies,
+                                     verify=verify, *args, **kwargs)
 
-        try:
-            resp_json = resp.json()
-        except ValueError:
-            resp_json = None
+        if self.response.headers.get("Content-Type") == "application/json":
+            self.response.data = self.response.json()
+        elif self.response.headers.get("Content-Type") == "application/cbor":
+            self.response.data = cbor.loads(self.response.content)
 
-        logger.debug("%s %s \n %s \n",
-                     colored("Response:", attrs=["bold"]),
-                     resp.status_code, pretty_dumps(resp_json))
+        if hasattr(self.response, "data"):
+            logger.debug("%s %s \n %s \n",
+                         colored("Response:", attrs=["bold"]),
+                         self.response.status_code,
+                         pretty_dumps(self.response.data))
 
-        if expect and (resp.status_code != expect):
-            raise OICException(expect, resp)
-        return resp
+        if expect and (self.response.status_code != expect):
+            raise OICException(expect, self.response)
+        return self.response
 
     def get(self, endpoint, authorize=True, authorize_as=None,
             *args, **kwargs):

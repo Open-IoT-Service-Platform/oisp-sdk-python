@@ -56,12 +56,16 @@ def underscore_to_camel(underscore_str):
                    for i, w in enumerate(underscore_str.split('_')))
 
 
-def pretty_dumps(json_dict):
+def pretty_dumps(dict_):
     """Format a json dictionary to a colorful and indented string."""
-    if json_dict is None:
+    if dict_ is None:
         return "None"
-    formatted_json = json.dumps(json_dict, indent=4)
-    return highlight(formatted_json,
+    try:
+        formatted = json.dumps(dict_, indent=4)
+    # Not everything is JSON serializable (see CBOR)
+    except TypeError:
+        formatted = str(dict_)
+    return highlight(formatted,
                      lexers.find_lexer_class_by_name("JSON")(),
                      formatters.find_formatter_class("terminal")())
 

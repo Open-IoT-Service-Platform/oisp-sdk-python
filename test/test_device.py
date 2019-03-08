@@ -133,3 +133,16 @@ class DeviceTestCase(BaseCaseWithAccount):
             return
 
         raise Exception("submit_data with user token should fail [6th Apr 18]")
+
+    def test_submit_binary_data(self):
+        self.account.create_component_type("image", "1.0", "sensor",
+                                           "ByteArray", "boolean", "pixel",
+                                           "binaryDataRenderer")
+        device = self.account.create_device("device_id", "device_name")
+        device.activate()
+        resp = device.add_component("temp1", "image.v1.0")
+        cid = resp["cid"]
+
+        data = bytes([1, 2, 3, 4])
+        device.add_sample(cid, data)
+        device.submit_data()

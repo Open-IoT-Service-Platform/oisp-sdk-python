@@ -255,5 +255,5 @@ class Account(object):
         else:
             payload = query
         endpoint = self.url + "/data/search/advanced"
-        json_dict = self.client.post(endpoint, data=payload, expect=200).json()
-        return QueryResponse(self, json_dict)
+        data_dict = self.client.post(endpoint, data=payload, expect=200).data
+        return QueryResponse(self, data_dict)

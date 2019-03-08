@@ -252,7 +252,7 @@ class Device(object):
         if on is None:
             on = timestamp_in_ms()
         datapoint = {"componentId": component_id,
-                     "value": str(value),
+                     "value": value,
                      "on": on}
         if loc is not None:
             datapoint["loc"] = loc
@@ -283,4 +283,5 @@ class Device(object):
 
         self.client.post(url, data=payload, authorize_as=self.auth_as,
                          expect=201)
+
         self.unsent_data = []
