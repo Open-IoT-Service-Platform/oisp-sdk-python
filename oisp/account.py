@@ -176,7 +176,7 @@ class Account(object):
 
     def create_component_type(self, dimension, version, ctype, data_type,
                               data_format, measure_unit, display,
-                              min_val=None, max_val=None):
+                              min_val=None, max_val=None, command=None):
         """Create a component type.
 
         Args:
@@ -197,10 +197,13 @@ class Account(object):
         payload = {"dimension": dimension, "version": version, "type": ctype,
                    "dataType": data_type, "format": data_format,
                    "measureunit": measure_unit, "display": display}
+
         if min_val:
             payload["min"] = min_val
         if max_val:
             payload["max"] = max_val
+        if command:
+            payload["command"] = command
         self.client.post(endpoint, data=payload, expect=201)
 
     def update_component_type(self, component_type_id, dimension=None,
