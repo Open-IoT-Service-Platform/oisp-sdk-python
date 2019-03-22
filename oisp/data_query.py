@@ -37,7 +37,7 @@ from oisp.utils import underscore_to_camel, timestamp_in_ms
 # Further methods are going to be added for non REST API
 # and this class is meant to act as a base class for further queries,
 # so it can not be replaced with a method.
-class DataQuery(object):
+class DataQuery:
     """Class to build JSON queries in an object oriented manner."""
 
     AGGREGATION_INCLUDE = "include"
@@ -97,7 +97,7 @@ class DataQuery(object):
         return payload_dict
 
 
-class QueryResponse(object):
+class QueryResponse:
     """Class to manage data search responses."""
 
     ADVANCED_INQUIRY = "advancedDataInquiryResponse"
@@ -151,7 +151,7 @@ class QueryResponse(object):
                     self.samples.append(sample)
 
 
-class Sample(object):
+class Sample:
     """Class representing a single datapoint."""
 
     # pylint: disable=too-many-arguments

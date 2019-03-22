@@ -32,7 +32,7 @@ from oisp.device import Device
 
 # pylint: disable=too-many-instance-attributes
 # The attributes match those defined in the REST API
-class Account(object):
+class Account:
     """Create IoT Account instance."""
 
     ROLE_ADMIN = "admin"
