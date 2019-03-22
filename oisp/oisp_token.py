@@ -32,7 +32,7 @@ from oisp.account import Account
 
 # pylint: disable=too-many-instance-attributes
 # An attribute is required for every json field
-class UserToken(object):
+class UserToken:
     """Store user token information."""
 
     # pylint: disable=too-many-arguments

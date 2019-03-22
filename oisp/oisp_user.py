@@ -31,7 +31,7 @@ from oisp.account import Account
 
 # pylint: disable=too-many-instance-attributes
 # The attributes match those defined in the REST API
-class User(object):
+class User:
     """Manages user information, passwords and activation."""
 
     # pylint: disable=too-many-arguments

@@ -35,7 +35,7 @@ from oisp.utils import (camel_to_underscore, underscore_to_camel,
 
 # pylint: disable=too-many-instance-attributes
 # The attributes match those defined in the REST API
-class Device(object):
+class Device:
     """Class managing device activation, components, and attributes.
 
     To find or filter devices connected to an account, refer to the
