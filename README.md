@@ -39,7 +39,7 @@ Connection to the host is managed by the `Client` class. You need the URL for th
 
 ``` python
 import oisp
-client = oisp.Client(api_root="http://localhost/v1/api/")
+client = oisp.Client(api_root="http://localhost/v1/api")
 ```
 
 If you are connecting over proxies, you can specify those using the `proxies` parameter, see method documentation for `__init__` for details.
