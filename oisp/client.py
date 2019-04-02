@@ -194,6 +194,9 @@ class Client:
         self.response = None
         # Test connection
         self.get_server_info()
+        # Check if the base_url ende with a / and if so, remove it
+        if self.base_url[-1] == "/":
+            self.base_url = self.base_url[:-1]
 
     def get_headers(self, authorize_as=None, authorize=True):
         """Return a JSON dictionary containing request headers.
