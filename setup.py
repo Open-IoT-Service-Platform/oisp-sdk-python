@@ -28,7 +28,7 @@
 from setuptools import setup
 
 setup(name='oisp',
-      version='0.1.0',
+      version='0.2.0.1',
       packages=['oisp'],
       description="An object oriented API for Open IoT Service Platform",
       url="https://github.com/Open-IoT-Service-Platform/oisp-sdk-python",

@@ -30,8 +30,8 @@ import json
 import logging
 
 import cbor
-from termcolor import colored
 import requests
+from termcolor import colored
 
 from oisp.account import Account
 from oisp.device import Device
@@ -395,9 +395,10 @@ class Client:
         self.response = request_func(url, headers=headers, proxies=proxies,
                                      verify=verify, *args, **kwargs)
 
-        if self.response.headers.get("Content-Type") == "application/json":
+        cont_type = self.response.headers.get("Content-Type", "")
+        if cont_type.startswith("application/json"):
             self.response.data = self.response.json()
-        elif self.response.headers.get("Content-Type") == "application/cbor":
+        elif cont_type.startswith("application/cbor"):
             self.response.data = cbor.loads(self.response.content)
 
         if hasattr(self.response, "data"):

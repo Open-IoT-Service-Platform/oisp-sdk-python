@@ -25,7 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """Methods for IoT Analytics device management and data submission."""
-
+import warnings
 from datetime import datetime
 import uuid
 
@@ -275,7 +275,7 @@ class Device:
         # If there is an account, we can POST to device URL
         if self.auth_as is None:
             url = self.url
-            raise Warning("""Submitting data without account token is """
+            warnings.warn("""Submitting data without account token is """
                           """currently not supported.""")
         # Otherwise we need to use the alternative /data/.* URL
         else:
