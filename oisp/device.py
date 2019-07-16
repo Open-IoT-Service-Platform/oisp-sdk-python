@@ -127,7 +127,7 @@ class Device:
         if not isinstance(created, datetime) and created is not None:
             py_dict["created"] = datetime.fromtimestamp(created / 1e3)
         if "loc" in py_dict:
-            py_dict["loc"] = list(map(int, py_dict["loc"]))
+            py_dict["loc"] = list(map(float, py_dict["loc"]))
         self.__dict__.update(py_dict)
 
     @property
