@@ -146,3 +146,14 @@ class DeviceTestCase(BaseCaseWithAccount):
         data = bytes([1, 2, 3, 4])
         device.add_sample(cid, data)
         device.submit_data()
+
+    def test_submit_boolean_data(self):
+        self.account.create_component_type("bool", "1.0", "sensor",
+                                           "Boolean", "boolean", "bool",
+                                           "timeSeries")
+        device = self.account.create_device("device_id", "device_name")
+        device.activate()
+        cid = device.add_component("bool1", "bool.v1.0")["cid"]
+        # TODO this is bad, but needs fix in frontend
+        device.add_sample(cid, "1")
+        device.submit_data()

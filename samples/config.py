@@ -26,11 +26,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # IoT Analytics server info#
-api_url = "http://localhost/v1/api"
+api_url = "http://dashboard:4001/v1/api"
 proxies = None
-
-# dashboard container name
-dashboard_container = "platformlauncher_dashboard_1"
 
 # user account to use
 username = "oisp@testing.com"

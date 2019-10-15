@@ -135,6 +135,8 @@ class QueryResponse:
         for device_dict in data:
             device_id = device_dict["deviceId"]
             for component_dict in device_dict.get("components"):
+                if "samples" not in component_dict.keys():
+                    continue
                 component_id = component_dict["componentId"]
                 date_type = component_dict["dataType"]
                 ts_i = component_dict["samplesHeader"].index("Timestamp")

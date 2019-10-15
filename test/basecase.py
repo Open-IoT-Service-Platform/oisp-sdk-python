@@ -29,8 +29,6 @@ import os
 import unittest
 import warnings
 
-import docker
-
 from oisp import Client
 from . import config, utils
 
@@ -50,27 +48,19 @@ class BaseCase(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(BaseCase, self).__init__(*args, **kwargs)
-        self.config = utils.load_yaml_with_include(self.config_path)
-        self.docker_client = docker.from_env()
-        self.postgres_container = self.docker_client.containers.get(
-            self.config["locals"]["postgres_container"])
-        self.dashboard_container = self.docker_client.containers.get(
-            self.config["locals"]["dashboard_container"])
 
     def setUp(self):
         # Supress unclosed socket warnings from docker
         warnings.filterwarnings("ignore", category=ResourceWarning,
                                 message=".*/var/run/docker.sock.*")
 
-        user = self.config["setup"]["users"][0]
-        utils.add_user(self.dashboard_container, user["username"],
-                       user["password"], user["role"])
+        utils.add_user(config.username, config.password, config.role)
 
-        self.client = Client(self.config["setup"]["api_root"])
-        self.client.auth(user["username"], user["password"])
+        self.client = Client(config.api_url)
+        self.client.auth(config.username, config.password)
 
     def tearDown(self):
-        utils.clear_db(self.postgres_container)
+        utils.clear_db()
 
 
 class BaseCaseWithAccount(BaseCase):

@@ -24,14 +24,15 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import time
 
 from test.basecase import BaseCaseWithAccount
+from oisp import DataQuery
 
-from oisp import Device, DataQuery, OICException
-
-CID_TEMP = "cid_temp"
-CID_IMAGE = "cid_image"
-CID_BOOL = "cid_bool"
+# Time to wait until the data is written to storage
+# This is an unrealistic large value to allow testing
+# clusters on low resource machines
+DATA_WRITE_WAIT = 5
 
 
 class DataTestCase(BaseCaseWithAccount):
@@ -48,25 +49,55 @@ class DataTestCase(BaseCaseWithAccount):
 
         self.device = self.account.create_device("device_id", "device_name")
         self.device.activate()
-
-        self.device.add_component("temp1", "temperature.v1.0", CID_TEMP)
-        self.device.add_component("img1", "image.v1.0", CID_IMAGE)
-        self.device.add_component("bool1", "bool.v1.0", CID_BOOL)
+        self.cid = {}
+        self.cid["temp"] = self.device.add_component("temp",
+                                                     "temperature.v1.0")["cid"]
+        self.cid["img"] = self.device.add_component("img1",
+                                                    "image.v1.0")["cid"]
+        self.cid["bool"] = self.device.add_component("bool1",
+                                                     "bool.v1.0")["cid"]
 
     def test_get_submitted_data(self):
-        self.device.add_sample(CID_TEMP, 10)
-        self.device.add_sample(CID_BOOL, True)
+        self.device.add_sample(self.cid["temp"], 10)
         self.device.submit_data()
+        time.sleep(DATA_WRITE_WAIT)
+        data = self.account.search_data(DataQuery())
+        self.assertEqual(len(data.samples), 1)
+        # As this test was written, the platform returned strings
+        # for every data type, hence "10"
+        self.assertCountEqual([s.value for s in data.samples], [10])
+
+    def test_get_multiple_samples(self):
+        self.device.add_sample(self.cid["temp"], 10)
+        # We have to wait shortly, otherwise, samples have the same timestamp
+        # and OISP ignores one of the samples. See
+        # https://github.com/Open-IoT-Service-Platform/oisp-frontend/issues/161
+        self.device.add_sample(self.cid["bool"], True)
+        self.device.submit_data()
+        time.sleep(DATA_WRITE_WAIT)
         data = self.account.search_data(DataQuery())
         self.assertEqual(len(data.samples), 2)
         # As this test was written, the platform returned strings
-        # for every data type, hence "10" and "true"
-        self.assertCountEqual([s.value for s in data.samples], ["10", "true"])
+        # for every data type, hence "10" and "20"
+        self.assertCountEqual([s.value for s in data.samples], [10, True])
+
+    def test_get_multiple_samples_from_multiple_components(self):
+        self.device.add_sample(self.cid["temp"], 10)
+        # TODO bad ("1") but must be fixed at frontend
+        self.device.add_sample(self.cid["bool"], True)
+        self.device.submit_data()
+        time.sleep(DATA_WRITE_WAIT)
+        data = self.account.search_data(DataQuery())
+        self.assertEqual(len(data.samples), 2)
+        # As this test was written, the platform returned strings
+        # for every data type, hence "10" and "20"
+        self.assertCountEqual([s.value for s in data.samples], [10, True])
 
     def test_get_submitted_binary_data(self):
         BINARY_PAYLOAD = bytes([1, 2, 3, 4, 5, 6])
-        self.device.add_sample(CID_IMAGE, BINARY_PAYLOAD)
+        self.device.add_sample(self.cid["img"], BINARY_PAYLOAD)
         self.device.submit_data()
+        time.sleep(DATA_WRITE_WAIT)
         data = self.account.search_data(DataQuery())
         self.assertEqual(len(data.samples), 1)
         self.assertEqual(data.samples[0].value, BINARY_PAYLOAD)

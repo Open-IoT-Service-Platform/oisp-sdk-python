@@ -36,18 +36,6 @@ try:
 except ImportError:
     import pdb
 
-reset_db = False # True
-
-if reset_db:
-    print("Resetting DB")
-    os.system("docker exec -it {} node /app/admin "
-              "resetDB &> /dev/null".format(config.dashboard_container))
-    os.system("docker exec -it {} node /app/admin addUser {} {} {} "
-              "&> /dev/null".format(config.dashboard_container,
-                                    config.username,
-                                    config.password,
-                                    config.role))
-
 client = oisp.Client(api_root=config.api_url, proxies=config.proxies)
 client.auth(config.username, config.password)
 
@@ -71,6 +59,14 @@ try:
                                       measure_unit="Degrees Celcius",
                                       display="timeSeries")
         resp = device.add_component("temp1", "temperature.v1.0")
+
+    try:
+        device.add_component("img1", "image.v1.0")
+    except:
+        account.create_component_type("image", "1.0", "sensor",
+                                           "ByteArray", "boolean", "pixel",
+                                           "binaryDataRenderer")
+        device.add_component("img1", "image.v1.0")
 
     cid = resp["cid"]
     device_id = device.device_id

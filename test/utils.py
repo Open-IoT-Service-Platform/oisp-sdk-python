@@ -24,79 +24,47 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 """Helper methods for various tests."""
+import subprocess
 
-import docker
-import yaml
-
-TABLES_QUERY = ("""psql -U postgres -d iot -t -c "SELECT table_name FROM
-information_schema.tables WHERE table_type='BASE TABLE' AND
-table_schema='dashboard' AND table_name <> 'user_accounts';" """)
-
-TRUNCATE_QUERY = """psql -U postgres -d iot -t -c 'TRUNCATE {} CASCADE;' """
-
-DELETE_USERS_QUERY = ("""psql -U postgres -d iot -t -c "DELETE FROM
-dashboard.users WHERE type != 'system';" """)
+kubectl = ["kubectl", "-n", "oisp"]
 
 
-def load_yaml_with_include(path):
-    """Load a yaml file with custom include statements.
-
-    This will look for #include <PATH> and replace these lines
-    with the content of the file on PATH. PATH can not contain
-    whitespace.
-
-    This is not implemented as !include with PyYaml as that
-    would not preserve anchors.
-    """
-    with open(path, "r") as inputfile:
-        lines = inputfile.readlines()
-        for i, line in enumerate(lines):
-            if line.startswith("#include "):
-                includepath = line.split()[1]
-                with open(includepath, "r") as includefile:
-                    lines[i] = includefile.read() + "\n"
-    text = "".join(lines)
-    return yaml.load(text)
+def _run_in(cmd, deployment=None, pod=None, container=None):
+    """Run command in kubernetes pod (or in random pod from deployment)."""
+    assert deployment is not None or pod is not None
+    if pod is None:
+        out = subprocess.check_output(kubectl+["get", "pods"]).decode("utf-8")
+        pods = [p for p in out.split("\n") if p.startswith(deployment+"-")]
+        assert pods, "No pod in deployment {}".format(deployment)
+        pod = pods[0].split()[0]
+    if isinstance(cmd, str):
+        cmd = cmd.split()
+    if container:
+        exec_ = ["exec", pod, "-c", container, "--"]
+    else:
+        exec_ = ["exec", pod, "--"]
+    return subprocess.check_output(kubectl + exec_ + cmd,
+                                   stderr=subprocess.DEVNULL)
 
 
-def clear_db(postgres_container):
+def clear_db():
     """Reset OISP database to default.
 
     This clears all tables, but keeps system users.
-
-    Args:
-    ----------
-    postgres_container: Either container name as string or container object"""
-    docker_client = docker.from_env()
-    if isinstance(postgres_container, str):
-        postgres_container = docker_client.containers.get(postgres_container)
-
-    code, out = postgres_container.exec_run(DELETE_USERS_QUERY)
-    assert code == 0, "Failed to delete non-system users"
-
-    code, out = postgres_container.exec_run(TABLES_QUERY)
-    assert code == 0, "Failed to receive table list."
-    table_list = [i for i in out.decode("utf-8").split() if i and i != "users"]
-    tables = ", ".join(['dashboard."{}"'.format(t) for t in table_list])
-    code, out = postgres_container.exec_run(TRUNCATE_QUERY.format(tables))
-    assert code == 0, "Failed to clear database: {}".format(out)
+    """
+    _run_in(cmd="node /app/admin resetDB",
+            deployment="dashboard", container="dashboard")
 
 
-def add_user(dashboard_container, username, password, role):
+def add_user(username, password, role):
     """Add a new user.
 
     Args:
     ----------
-    dashboard_container: Either container name as string or container object
     username: username for new user
     password: password for new user
     role: user role, see OISP documentation for details.
     """
-    docker_client = docker.from_env()
-    if isinstance(dashboard_container, str):
-        dashboard_container = docker_client.containers.get(dashboard_container)
-    code, out = dashboard_container.exec_run("""
-        node /app/admin addUser {} {} {} """.format(username, password, role))
-    assert code == 0, "Failed to recreate user: {}".format(out)
+    cmd = ["node", "/app/admin", "addUser", username, password, role]
+    _run_in(cmd=cmd, deployment="dashboard", container="dashboard")

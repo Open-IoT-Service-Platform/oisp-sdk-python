@@ -387,9 +387,6 @@ class Client:
             # Not json serializable, try CBOR
             except TypeError:
                 headers["Content-Type"] = "application/cbor"
-                logger.debug("%s \n%s", colored("Payload (CBOR):",
-                                                attrs=["bold"]),
-                             str(kwargs["data"]))
                 kwargs["data"] = cbor.dumps(kwargs["data"])
 
         self.response = request_func(url, headers=headers, proxies=proxies,

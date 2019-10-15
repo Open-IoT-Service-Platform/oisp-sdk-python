@@ -27,6 +27,9 @@
 
 # PROJECT_NAME is used to find the containers, this should match
 # COMPOSE_PROJECT_NAME in platform-launcher
+NAMESPACE?=oisp
+DASHBOARD_POD:=$(shell kubectl -n $(NAMESPACE) get pods -o custom-columns=:metadata.name | grep dashboard | head -n 1)
+
 PROJECT_NAME ?= "oisp"
 USERNAME = "testuser"
 PASSWORD = "P@ssw0rd"
@@ -35,12 +38,10 @@ ROLE = "admin"
 
 test: lint-light reset-db
 	@$(call msg,"Starting Integrity Tests ...")
-	virtualenv --no-site-packages venv_test;
-	( . venv_test/bin/activate; \
-	pip install coverage; \
-	coverage run --source oisp setup.py test; \
-	)
-	coverage report -m
+	virtualenv venv_test;
+	. venv_test/bin/activate && \
+	coverage run --source oisp setup.py test && \
+	coverage report -m;
 
 format-files: .install-deps
 	@$(call msg,"Autoformatting .py files in oisp ...");
@@ -69,7 +70,7 @@ install: .install
 
 reset-db:
 	@$(call msg,"Resetting database ...");
-	docker exec -it $(PROJECT_NAME)_frontend_1 node /app/admin resetDB;
+	kubectl -n $(NAMESPACE) exec -it $(DASHBOARD_POD) -c dashboard -- node /app/admin resetDB;
 
 enter-debug: .install
 	cd samples && python enter_pdb.py;
