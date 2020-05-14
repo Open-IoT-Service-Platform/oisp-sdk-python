@@ -213,7 +213,7 @@ class Device:
             cid = str(uuid.uuid4())
         payload = {"cid": cid, "name": name, "type": component_type}
         resp = self.client.post(endpoint, data=payload,
-                                authorize_as=self.auth_as, expect=201)
+                                authorize_as=None, expect=201)
 
         if self.components is None:
             self.components = []
@@ -224,7 +224,7 @@ class Device:
     def delete_component(self, component_id):
         """Delete component with given id."""
         endpoint = "{}/components/{}".format(self.url, component_id)
-        self.client.delete(endpoint, authorize_as=self.auth_as, expect=204)
+        self.client.delete(endpoint, authorize_as=None, expect=204)
         self.components = [c for c in self.components
                            if c["cid"] != component_id]
 

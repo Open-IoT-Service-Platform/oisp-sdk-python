@@ -102,7 +102,7 @@ class UserToken:
                              "missing".format(exc.args[0]))
         accounts = []
         for account_dict in payload.get("accounts", []):
-            accounts.append(Account(client, account_dict["name"],
+            accounts.append(Account(client, account_dict.get("name"),
                                     account_dict["id"],
                                     account_dict["role"]))
 
