@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2018, Intel Corporation
+# Copyright (c) 2015-2020, Intel Corporation
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -28,7 +28,7 @@
 from setuptools import setup
 
 setup(name='oisp',
-      version='0.2.0.1',
+      version='0.2.1',
       packages=['oisp'],
       description="An object oriented API for Open IoT Service Platform",
       url="https://github.com/Open-IoT-Service-Platform/oisp-sdk-python",
