@@ -2,43 +2,37 @@
 #
 # Check https://circleci.com/docs/2.0/language-python/ for more details
 #
-version: 2
-jobs:
-  build:
-    docker:
-      # specify the version you desire here
-      # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
-      - image: circleci/python:3.6.1
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
+version: 2.1
+  vm-executor:
+    machine:
+      enabled: true
+      image: ubuntu-1604:201903-01
     working_directory: ~/repo
+    environment:
+      shell: /bin/bash
+      TERM: xterm
+      TZ: "Europe/Berlin"
+  docker-executor:
+    docker:
+      - image: circleci/node:10.0
+    working_directory: ~/repo
+    environment:
+      shell: /bin/bash
+      TERM: xterm
 
+commands:
+  install-sdk:
+    description: "Install sdk and required testing tools."
     steps:
-      - checkout
-
       - run:
-          name: Install
-          shell: /bin/bash
-          command: |
-            sudo python setup.py install
-            sudo pip install pylint pycodestyle pydocstyle
-
+        command: |
+          sudo python3 setup.py install
+          sudo pip3 install pylint pycodestyle pydocstyle
+  check-signed:
+    description: "Check whether latest commit is signed"
+    steps:
       - run:
-          name: Run linters
-          shell: /bin/bash
-          command: |
-            pylint oisp --score=n || exit 1
-            pycodestyle oisp || exit 1
-            pycodestyle test || exit 1
-            pydocstyle oisp --add-ignore=D105 || exit 1
-
-      - run:
-          name: Check whether most recent commit is signedoff
-          shell: /bin/bash
+          name: Check whether most recent commit is signed
           command: |
             MESSAGE=`git log -1 --pretty=%B`
             echo "Checking whether signed"
@@ -48,3 +42,25 @@ jobs:
               echo "Commit is not signedoff"
               exit 1
             fi
+  lint:
+    description: "Run linters for code and comments."
+    steps:
+      - run:
+        command: |
+          pylint oisp --score=n || exit 1
+          pycodestyle oisp || exit 1
+          pycodestyle test || exit 1
+          pydocstyle oisp --add-ignore=D105 || exit 1
+
+jobs:
+  e2e-test:
+    executor: vm-executor
+    steps:
+      - check-signed
+      - install-sdk
+      - lint
+
+workflows:
+  workflow:
+    jobs:
+      - e2e-test
