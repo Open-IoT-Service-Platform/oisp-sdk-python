@@ -190,8 +190,12 @@ class Device:
         payload = {underscore_to_camel(k): v
                    for k, v in locals().items() if k != "self" and v}
 
+        authToken = None
+        if self.account is None:
+            authToken = self.auth_as
+
         self.client.put(self.url, data=payload, expect=200,
-                        authorize_as=self.auth_as)
+                        authorize_as=authToken)
         self.__dict__.update(payload)
 
     def add_component(self, name, component_type, cid=None):
@@ -209,11 +213,15 @@ class Device:
 
         """
         endpoint = self.url + "/components"
+        authToken = None
+        if self.account is None:
+            authToken = self.auth_as
+
         if not cid:
             cid = str(uuid.uuid4())
         payload = {"cid": cid, "name": name, "type": component_type}
         resp = self.client.post(endpoint, data=payload,
-                                authorize_as=None, expect=201)
+                                authorize_as=authToken, expect=201)
 
         if self.components is None:
             self.components = []
@@ -224,13 +232,21 @@ class Device:
     def delete_component(self, component_id):
         """Delete component with given id."""
         endpoint = "{}/components/{}".format(self.url, component_id)
-        self.client.delete(endpoint, authorize_as=None, expect=204)
+        authToken = None
+        if self.account is None:
+            authToken = self.auth_as
+
+        self.client.delete(endpoint, authorize_as=authToken, expect=204)
         self.components = [c for c in self.components
                            if c["cid"] != component_id]
 
     def update(self):
         """Update device information."""
-        resp = self.client.get(self.url, authorize_as=self.auth_as, expect=200)
+        authToken = None
+        if self.account is None:
+            authToken = self.auth_as
+
+        resp = self.client.get(self.url, authorize_as=authToken, expect=200)
         self._update_with_json(resp.json())
 
     def add_sample(self, component_id, value, on=None, loc=None):

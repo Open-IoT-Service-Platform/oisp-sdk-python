@@ -28,7 +28,7 @@
 # PROJECT_NAME is used to find the containers, this should match
 # COMPOSE_PROJECT_NAME in platform-launcher
 NAMESPACE?=oisp
-DASHBOARD_POD:=$(shell kubectl -n $(NAMESPACE) get pods -o custom-columns=:metadata.name | grep dashboard | head -n 1)
+FRONTEND_POD:=$(shell kubectl -n $(NAMESPACE) get pods -o custom-columns=:metadata.name | grep frontend | head -n 1)
 
 PROJECT_NAME ?= "oisp"
 USERNAME = "testuser"
@@ -70,7 +70,11 @@ install: .install
 
 reset-db:
 	@$(call msg,"Resetting database ...");
-	kubectl -n $(NAMESPACE) exec -it $(DASHBOARD_POD) -c dashboard -- node /app/admin resetDB;
+	#kubectl -n $(NAMESPACE) exec -it $(FRONTEND_POD)  -- node /app/admin resetDB;
+
+	kubectl -n $(NAMESPACE) exec $(FRONTEND_POD) --container frontend -- node admin resetKeycloakUsers
+	kubectl -n $(NAMESPACE) exec $(FRONTEND_POD) --container frontend -- node admin resetDB
+
 
 enter-debug: .install
 	cd samples && python enter_pdb.py;
