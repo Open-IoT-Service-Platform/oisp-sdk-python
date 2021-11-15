@@ -25,9 +25,9 @@ commands:
     description: "Install sdk and required testing tools."
     steps:
       - run:
-        command: |
-          sudo python3 setup.py install
-          sudo pip3 install pylint pycodestyle pydocstyle
+          command: |
+            sudo python3 setup.py install
+            sudo pip3 install pylint pycodestyle pydocstyle
 
   checkout-platform-launcher:
     description: "Checkout Platform Launcher"
@@ -42,7 +42,6 @@ commands:
             git submodule init
             git submodule update
             yes | make update
-	    
   setup-platform-launcher:
     description: "Setup Platform Launcher"
     steps:
@@ -60,28 +59,29 @@ commands:
     description: "Pull images, build, deploy and port forward the platform launcher"
     steps:
       - run:
-	  shell: /bin/bash
-	  name: Pull images, build, deploy and port forward the platform launcher 
-	  command: |
-	    cd platform-launcher
-	    if docker login  -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD};
+          shell: /bin/bash
+          name: Pull images, build, deploy and port forward the platform launcher 
+          command: |
+            cd platform-launcher
+            if docker login  -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD};
             then
                 DOCKER_TAG="latest" docker-compose pull
             else
                 echo "Docker Credentials are wrong."
-		exit 1
+                exit 1
             fi
-	    make build DEBUG=true DOCKERUSER=${DOCKER_USERNAME} DOCKERPASS=${DOCKER_PASSWORD}
-	    make deploy-oisp-test DEBUG=true USE_LOCAL_REGISTRY=true
-	    bash wait-until-ready.sh
-	    sleep 1m
-	    FRONTEND_POD=$(kubectl -n oisp get pods | grep frontend | cut -f 1 -d " ")
-	    kubectl -n oisp port-forward ${FRONTEND_POD} 4001:4001
-	    
+            make build DEBUG=true DOCKERUSER=${DOCKER_USERNAME} DOCKERPASS=${DOCKER_PASSWORD}
+            make deploy-oisp-test DEBUG=true USE_LOCAL_REGISTRY=true
+            bash wait-until-ready.sh
+            sleep 1m
+            FRONTEND_POD=$(kubectl -n oisp get pods | grep frontend | cut -f 1 -d " ")
+            kubectl -n oisp port-forward ${FRONTEND_POD} 4001:4001
+            
   check-signed:
     description: "Check whether latest commit is signed"
     steps:
       - run:
+          shell: /bin/bash
           name: Check whether most recent commit is signed
           command: |
             MESSAGE=`git log -1 --pretty=%B`
@@ -96,18 +96,21 @@ commands:
     description: "Run linters for code and comments."
     steps:
       - run:
-        command: |
-          pylint oisp --score=n || exit 1
-          pycodestyle oisp || exit 1
-          pycodestyle test || exit 1
-          pydocstyle oisp --add-ignore=D105 || exit 1
-  e2e:
+          shell: /bin/bash
+          command: |
+            pylint oisp --score=n || exit 1
+            pycodestyle oisp || exit 1
+            pycodestyle test || exit 1
+            pydocstyle oisp --add-ignore=D105 || exit 1
+          
+  do-e2e-test:
     description: "Run SDK's e2e test"
     steps:
       - run:
-        name: Run SDK\'s tests connecting to the hosted platform launcher
-	command: |
-	  make test
+          shell: /bin/bash
+          name: Run SDK\'s tests connecting to the hosted platform launcher
+          command: |
+            make test
 jobs:
   e2e-test:
     executor: vm-executor
@@ -118,7 +121,7 @@ jobs:
       - pull-images-and-deploy-then-forward
       - install-sdk
       - lint
-      - e2e
+      - do-e2e-test
 
 workflows:
   version: 2.1
