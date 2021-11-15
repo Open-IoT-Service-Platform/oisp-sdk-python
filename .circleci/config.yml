@@ -26,6 +26,8 @@ commands:
     steps:
       - run:
           command: |
+            git clone ${CI_PULL_REQUEST}
+            cd oisp-sdk-python
             sudo python3 setup.py install
             sudo pip3 install pylint pycodestyle pydocstyle
 
@@ -98,6 +100,7 @@ commands:
       - run:
           shell: /bin/bash
           command: |
+            cd oisp-sdk-python
             pylint oisp --score=n || exit 1
             pycodestyle oisp || exit 1
             pycodestyle test || exit 1
@@ -110,17 +113,18 @@ commands:
           shell: /bin/bash
           name: Run SDK\'s tests connecting to the hosted platform launcher
           command: |
+            cd oisp-sdk-python
             make test
 jobs:
   e2e-test:
     executor: vm-executor
     steps:
+      - install-sdk
+      - lint
       - check-signed
       - checkout-platform-launcher
       - setup-platform-launcher
       - pull-images-and-deploy-then-forward
-      - install-sdk
-      - lint
       - do-e2e-test
 
 workflows:
