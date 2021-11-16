@@ -26,7 +26,6 @@ commands:
     steps:
       - run:
           command: |
-            git clone ${CI_PULL_REQUEST}
             cd oisp-sdk-python
             sudo python3 setup.py install
             sudo pip3 install pylint pycodestyle pydocstyle
@@ -57,7 +56,7 @@ commands:
             sudo dd if=/dev/zero of=/swapfile bs=1M count=8000
             sudo mkswap /swapfile
             sudo swapon /swapfile
-  pull-images-and-deploy-then-forward:
+  prepare-platform-launcher:
     description: "Pull images, build, deploy and port forward the platform launcher"
     steps:
       - run:
@@ -73,11 +72,18 @@ commands:
                 exit 1
             fi
             make build DEBUG=true DOCKERUSER=${DOCKER_USERNAME} DOCKERPASS=${DOCKER_PASSWORD}
-            make deploy-oisp-test DEBUG=true USE_LOCAL_REGISTRY=true
-            bash wait-until-ready.sh
-            sleep 1m
+            make import-images DEBUG=true USE_LOCAL_REGISTRY=true
+            export NODOCKERLOGIN=true
+            retval=2;
+            until [ ${retval} -eq 0 ]; do
+              make undeploy-oisp
+              (for i in {1..20}; do sleep 60; echo .; done&) &&  make deploy-oisp-test  USE_LOCAL_REGISTRY=true
+              make test
+              retval=$?
+            done
             FRONTEND_POD=$(kubectl -n oisp get pods | grep frontend | cut -f 1 -d " ")
             kubectl -n oisp port-forward ${FRONTEND_POD} 4001:4001
+          no_output_timeout: 20m
             
   check-signed:
     description: "Check whether latest commit is signed"
@@ -100,32 +106,31 @@ commands:
       - run:
           shell: /bin/bash
           command: |
-            cd oisp-sdk-python
             pylint oisp --score=n || exit 1
             pycodestyle oisp || exit 1
             pycodestyle test || exit 1
             pydocstyle oisp --add-ignore=D105 || exit 1
           
-  do-e2e-test:
+  sdk-e2e-test:
     description: "Run SDK's e2e test"
     steps:
       - run:
           shell: /bin/bash
           name: Run SDK\'s tests connecting to the hosted platform launcher
           command: |
-            cd oisp-sdk-python
             make test
 jobs:
   e2e-test:
     executor: vm-executor
     steps:
+      - checkout
       - install-sdk
       - lint
       - check-signed
       - checkout-platform-launcher
       - setup-platform-launcher
-      - pull-images-and-deploy-then-forward
-      - do-e2e-test
+      - prepare-platform-launcher
+      - sdk-e2e-test
 
 workflows:
   version: 2.1
