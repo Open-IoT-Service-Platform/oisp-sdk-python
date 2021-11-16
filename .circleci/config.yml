@@ -26,7 +26,6 @@ commands:
     steps:
       - run:
           command: |
-            cd oisp-sdk-python
             sudo python3 setup.py install
             sudo pip3 install pylint pycodestyle pydocstyle
 
