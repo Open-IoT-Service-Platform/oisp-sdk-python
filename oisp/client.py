@@ -160,7 +160,7 @@ class OICException(Exception):
                 self.code = resp_json.get("code")
         except json.JSONDecodeError:
             message += "\nResponse: {}".format(resp.content)
-        super(OICException, self).__init__(message)
+        super().__init__(message)
 
 
 class Client:

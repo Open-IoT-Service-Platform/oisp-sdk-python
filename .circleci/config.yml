@@ -105,7 +105,7 @@ commands:
       - run:
           shell: /bin/bash
           command: |
-            pylint oisp --score=n || exit 1
+            pylint oisp --score=n --disable=c0209 || exit 1
             pycodestyle oisp || exit 1
             pycodestyle test || exit 1
             pydocstyle oisp --add-ignore=D105 || exit 1
