@@ -190,7 +190,7 @@ class Device:
         payload = {underscore_to_camel(k): v
                    for k, v in locals().items() if k != "self" and v}
 
-        #Decide which token to send to the frontend
+        # Decide which token to send to the frontend
         authToken = None
         if self.account is None:
             authToken = self.auth_as
