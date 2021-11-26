@@ -1,0 +1,89 @@
+name: E2E Test
+on:
+  pull_request:
+    branches:
+      - develop
+
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.ref }}
+
+    - name: Set up SDK
+      shell: bash
+      run: |
+        export TERM=vt100
+        sudo python3 setup.py install
+        pip3 install pylint pycodestyle pydocstyle virtualenv coverage
+        
+    - name: Run Linter
+      shell: bash
+      run: |
+        export TERM=vt100
+        pylint oisp --score=n --disable=c0209 || exit 1
+        pycodestyle oisp || exit 1
+        pycodestyle test || exit 1
+        pydocstyle oisp --add-ignore=D105 || exit 1
+
+    - name: Checkout platform launcher
+      shell: bash
+      run: |
+        export TERM=vt100
+        set +o pipefail
+        git clone https://github.com/Open-IoT-Service-Platform/platform-launcher.git
+        cd platform-launcher
+        git checkout develop
+        git submodule update --recursive --init
+        yes | make update
+
+    - name: Set up Platform Launcher
+      shell: bash
+      run: |
+        export TERM=vt100
+        cd platform-launcher/util && \
+        bash setup-ubuntu20.04.sh
+        
+    - name: Build and deploy Platform Launcer
+      shell: bash
+      run: |
+        set +e
+        set +o pipefail
+        export TERM=vt100
+        cd platform-launcher
+        yes | DOCKER_TAG=test NODOCKERLOGIN=true DEBUG=true make build
+        export PATH=$PATH:/snap/bin
+        make import-images DOCKER_TAG=test DEBUG=true
+        docker image prune -a -f
+        rm -rf oisp-*
+        npm install nodemailer
+        export NODOCKERLOGIN=true
+        retval=2;
+        export DOCKER_TAG=test
+        export USE_LOCAL_REGISTRY=true
+        until [ ${retval} -eq 0 ]; do
+          make undeploy-oisp
+          (for i in {1..20}; do sleep 60; echo .; done&) &&  make deploy-oisp-test
+          make test
+          retval=$?
+        done
+        FRONTEND_POD=$(kubectl -n oisp get pods | grep frontend | cut -f 1 -d " ")
+        kubectl -n oisp port-forward ${FRONTEND_POD} 4001:4001 &
+
+    - name: SDK E2E Test
+      shell: bash
+      run: |
+        set +e
+        export TERM=vt100
+        sudo chmod -R 777 .
+        retval=2;
+        until [ ${retval} -eq 0 ]; do
+          make test
+          retval=$?
+        done
