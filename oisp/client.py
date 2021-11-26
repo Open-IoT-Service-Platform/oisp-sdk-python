@@ -28,7 +28,10 @@
 
 import json
 import logging
-
+try:
+    from simplejson.errors import JSONDecodeError
+except ImportError:
+    from json.decoder import JSONDecodeError
 import cbor
 import requests
 from termcolor import colored
@@ -150,6 +153,7 @@ class OICException(Exception):
         message = ("Exception during API call\n"
                    "HTTP code: {}, {} was expected".format(resp.status_code,
                                                            expect))
+        self.code = resp.status_code
         try:
             resp_json = resp.json()
             if resp_json:
@@ -157,9 +161,9 @@ class OICException(Exception):
                                     separators=(',', ': '))
                 message += "\nError message: {}".format(pretty)
                 self.code = resp_json.get("code")
-        except json.JSONDecodeError:
+        except JSONDecodeError:
             message += "\nResponse: {}".format(resp.content)
-        super(OICException, self).__init__(message)
+        super().__init__(message)
 
 
 class Client:
@@ -314,7 +318,7 @@ class Client:
 
     def get_accounts(self):
         """Get a list of accounts connected to current authentication token."""
-        return self.user_token.accounts
+        return self.get_user().accounts
 
     def get_device(self, device_token, device_id, domain_id=None,
                    fetch_info=True):
@@ -329,7 +333,6 @@ class Client:
         is bound to.
         fetch_info (boolean): whether to fetch device information.
         """
-        fetch_info = fetch_info
         headers = self.get_headers(authorize=False)
         headers["Authorization"] = "Bearer " + device_token
 

@@ -53,8 +53,10 @@ def clear_db():
 
     This clears all tables, but keeps system users.
     """
+    _run_in(cmd="node /app/admin resetKeycloakUsers",
+            deployment="frontend", container="frontend")
     _run_in(cmd="node /app/admin resetDB",
-            deployment="dashboard", container="dashboard")
+            deployment="frontend", container="frontend")
 
 
 def add_user(username, password, role):
@@ -66,5 +68,5 @@ def add_user(username, password, role):
     password: password for new user
     role: user role, see OISP documentation for details.
     """
-    cmd = ["node", "/app/admin", "addUser", username, password, role]
-    _run_in(cmd=cmd, deployment="dashboard", container="dashboard")
+    cmd = ["node", "/app/admin", "addUser", username, password]
+    _run_in(cmd=cmd, deployment="frontend", container="frontend")

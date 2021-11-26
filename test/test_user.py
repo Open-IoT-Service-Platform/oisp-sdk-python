@@ -36,4 +36,3 @@ class GetCreateDeviceTestCase(BaseCaseWithAccount):
         user = self.client.get_user()
         # E-mail adress is used as username
         self.assertEqual(user.email, config.username)
-        self.assertEqual(user.tc_accepted, True)

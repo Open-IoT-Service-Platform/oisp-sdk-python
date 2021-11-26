@@ -79,7 +79,8 @@ class DataTestCase(BaseCaseWithAccount):
         self.assertEqual(len(data.samples), 2)
         # As this test was written, the platform returned strings
         # for every data type, hence "10" and "20"
-        self.assertCountEqual([s.value for s in data.samples], [10, True])
+        # TODO: submitted boolean data is converted to 0 or 1
+        self.assertCountEqual([s.value for s in data.samples], [10, '1'])
 
     def test_get_multiple_samples_from_multiple_components(self):
         self.device.add_sample(self.cid["temp"], 10)
@@ -91,7 +92,7 @@ class DataTestCase(BaseCaseWithAccount):
         self.assertEqual(len(data.samples), 2)
         # As this test was written, the platform returned strings
         # for every data type, hence "10" and "20"
-        self.assertCountEqual([s.value for s in data.samples], [10, True])
+        self.assertCountEqual([s.value for s in data.samples], [10, '1'])
 
     def test_get_submitted_binary_data(self):
         BINARY_PAYLOAD = bytes([1, 2, 3, 4, 5, 6])

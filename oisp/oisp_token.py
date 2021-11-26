@@ -99,7 +99,7 @@ class UserToken:
             expires_by = payload["exp"]
         except KeyError as exc:
             raise ValueError("Invalid JSON format key '{}' "
-                             "missing".format(exc.args[0]))
+                             "missing".format(exc.args[0])) from exc
         accounts = []
         for account_dict in payload.get("accounts", []):
             accounts.append(Account(client, account_dict.get("name"),
