@@ -1,4 +1,7 @@
 # OISP Python SDK
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FOpen-IoT-Service-Platform%2Foisp-sdk-python.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FOpen-IoT-Service-Platform%2Foisp-sdk-python?ref=badge_shield)
+
+=================================
 This library provides Python bindings to the [Open IoT Service Platform (OISP)](https://github.com/Open-IoT-Service-Platform).
 
 ## Installation
@@ -135,3 +138,6 @@ response = account.search_data(query)
 # See all data values from the response
 data_values = [sample.value for sample in response.samples]
 ```
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FOpen-IoT-Service-Platform%2Foisp-sdk-python.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FOpen-IoT-Service-Platform%2Foisp-sdk-python?ref=badge_shield)
