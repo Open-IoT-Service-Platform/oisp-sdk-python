@@ -3,14 +3,15 @@ on:
   pull_request:
     branches:
       - develop
-
   push:
     branches:
       - develop
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    env:
+      SELF_HOSTED_RUNNER: true
+    runs-on: private
     steps:
     - uses: actions/checkout@v2
       with:
@@ -20,14 +21,15 @@ jobs:
       shell: bash
       run: |
         export TERM=vt100
-        sudo python3 setup.py install
+        python3 setup.py install --user
         pip3 install pylint pycodestyle pydocstyle virtualenv coverage
-        
+
     - name: Run Linter
       shell: bash
       run: |
         export TERM=vt100
-        pylint oisp --score=n --disable=c0209 || exit 1
+        export PATH=$PATH:$HOME/.local/bin
+        pylint oisp --score=y --disable=c0209 || exit 1
         pycodestyle oisp || exit 1
         pycodestyle test || exit 1
         pydocstyle oisp --add-ignore=D105 || exit 1
@@ -36,7 +38,11 @@ jobs:
       shell: bash
       run: |
         export TERM=vt100
+        export PATH=$PATH:$HOME/.local/bin
         set +o pipefail
+        if [ -z "${SELF_HOSTED_RUNNER}" ]; then
+          sudo apt install jq
+        fi
         git clone https://github.com/Open-IoT-Service-Platform/platform-launcher.git
         cd platform-launcher
         git checkout develop
@@ -47,18 +53,25 @@ jobs:
       shell: bash
       run: |
         export TERM=vt100
-        cd platform-launcher/util && \
-        bash setup-ubuntu20.04.sh
-        
+        export PATH=$PATH:$HOME/.local/bin
+        set +o pipefail
+        cd platform-launcher
+        if [ -z "${SELF_HOSTED_RUNNER}" ]; then
+          cd util && \
+          bash setup-ubuntu20.04.sh
+        else
+          make restart-cluster
+        fi
+
     - name: Build and deploy Platform Launcer
       shell: bash
       run: |
         set +e
         set +o pipefail
         export TERM=vt100
+        export PATH=$PATH:$HOME/.local/bin:/snap/bin
         cd platform-launcher
         yes | DOCKER_TAG=test NODOCKERLOGIN=true DEBUG=true make build
-        export PATH=$PATH:/snap/bin
         make import-images DOCKER_TAG=test DEBUG=true
         docker image prune -a -f
         rm -rf oisp-*
@@ -81,6 +94,7 @@ jobs:
       run: |
         set +e
         export TERM=vt100
+        export PATH=$PATH:$HOME/.local/bin
         sudo chmod -R 777 .
         retval=2;
         until [ ${retval} -eq 0 ]; do
